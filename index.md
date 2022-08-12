@@ -1439,3 +1439,266 @@ Note: Azure AD is a managed service. You only manage the users, groups, and poli
 <hr>
 
 ## Select Azure Active Directory editions
+Azure Active Directory comes in four editions-**Free, Microsoft 365 Apps, Premium P1,** and **Premium P2**. The Free edition is included with an Azure subscription. The Premium editions are available through a Microsoft Enterprise Agreement, the Open Volume License Program, and the Cloud Solution Providers program. Azure and Microsoft 365 subscribers can also buy Azure Active Directory Premium P1 and P2 online.
+
+**Azure Active Directory Free**: Provides user and group management, on-premises directory synchronization, basic reports, and single sign-on across Azure, Microsoft 365, and many popular SaaS apps.
+
+**Azure Active Directory Microsoft 365 Apps**: This edition is included with O365. In addition to the Free features, this edition provides Identity & Access Management for Microsoft 365 apps including branding, MFA, group access management, and self-service password reset for cloud users.
+
+**Azure Active Directory Premium P1**: In addition to the Free features, P1 also lets your hybrid users access both on-premises and cloud resources. It also supports advanced administration, such as dynamic groups, self-service group management, Microsoft Identity Manager (an on-premises identity and access management suite) and cloud write-back capabilities, which allow self-service password reset for your on-premises users.
+
+**Azure Active Directory Premium P2**: In addition to the Free and P1 features, P2 also offers Azure Active Directory Identity Protection to help provide risk-based Conditional Access to your apps and critical company data. Privileged Identity Management is included to help discover, restrict, and monitor administrators and their access to resources and to provide just-in-time access when needed.
+
+<hr>
+
+## Implement Azure Active Directory join
+Azure Active Directory (Azure AD) enables single sign-on to devices, apps, and services from anywhere. IT administrators must ensure corporate assets are protected and that devices meet standards for security and compliance.
+
+Azure AD Join is designed to provide access to organizational apps and resources and to simplify Windows deployments of work-owned devices. AD Join has these benefits:
+
+- **Single-Sign-On (SSO)** to your Azure-managed SaaS apps and services. Your users won't have additional authentication prompts when accessing work resources. The SSO functionality is available even when users are not connected to the domain network.
+
+- **Enterprise state roaming** of user settings across joined devices. With Windows 10, users gain the ability to securely synchronize their user settings and application settings data to the cloud. This reduces the time to configure a new device.
+
+- **Access to Microsoft Store for Business** using an Azure AD account. Your users can choose from an inventory of applications pre-selected by the organization.
+- **Windows Hello** support for secure and convenient access to work resources.
+- **Restriction of access** to apps from only devices that meet compliance policy.
+- **Seamless access to on-premises resources** when the device has line of sight to the on-premises domain controller.
+
+## Connection options
+To get a device under the control of Azure AD, you have two options:
+
+- **Registering** a device to Azure AD enables you to manage a device's identity. Azure AD device registration provides the device with an identity that is used to authenticate the device when a user signs-in to Azure AD. You can use the identity to enable or disable a device.
+- **Joining** a device is an extension to registering a device. Joining provides the benefits of registering and changes the local state of a device. Changing the local state enables your users to sign-in to a device using an organizational work or school account instead of a personal account.
+
+Note: Although AD Join is intended for organizations that do not have on-premises Windows Server Active Directory infrastructure it can be used for other scenarios like branch offices.
+
+<hr>
+
+## Implement self-service password reset
+Enabling **Self-service Password Reset** (SSPR) gives the users the ability to bypass the helpdesk and reset their own passwords.
+
+To configure Self-Service Password Reset, you first determine who will be enabled to use self-service password reset. From your existing Azure AD tenant, on the Azure portal under **Azure Active Directory (Users)** select **Password reset**.
+
+In the Password reset properties there are three options: **None, Selected**, and **All**.
+
+The **Selected** option is useful for creating specific groups who have self-service password reset enabled. You can create a group for testing or proof of concept before deploying to a larger group. Once you are ready to deploy this functionality to all users with accounts in your AD Tenant, you can change the setting.
+
+## Authentication methods
+After enabling password reset for user and groups, you pick the number of authentication methods required to reset a password and the number of authentication methods available to users. At least one authentication method is required to reset a password. It is a good idea to have other methods available. You can choose from email notification, a text, or code sent to user's mobile or office phone, or a set of security options.
+
+You can require security questions to be registered for the users in your AD tenant. You can also configure how many correctly answered security questions are required for a successful password reset. Security questions can be less secure than other methods because some people might know the answers to another user's questions.
+
+Note: Azure Administrator accounts can always reset their passwords no matter what options are configured.
+
+<hr>
+
+## Knowledge check
+1. Which of the following correctly describes Azure Active Directory? -> Azure AD is primarily an identity solution.
+2. A dedicated and trusted instance of Azure Active Directory is often referred to as? -> An Azure tenant.
+3. Your users want to sign-in to devices, apps, and services from anywhere. Users want to sign-in using an organizational work or school account instead of a personal account. What should you do first? -> Join the device.
+
+<hr>
+
+## Create Azure users and groups in Azure Active Directory
+Create users in Azure Active Directory. Understand different types of groups. Create a group and add members. Manage business-to-business guest accounts.
+
+## Objectives
+- Add users to Azure Active Directory.
+- Manage app and resource access by using Azure Active Directory groups.
+- Give guest users access in Azure Active Directory business to business (B2B).
+
+## What are user accounts in Azure Active Directory?
+In Azure Active Directory (Azure AD), all user accounts are granted a set of default permissions. A user's account access consists of the type of user, their role assignments, and their ownership of individual objects.
+
+There are different types of user accounts in Azure AD. Each type has a level of access specific to the scope of work expected to be done under each type of user account. Administrators have the highest level of access, followed by the member user accounts in the Azure AD organization. Guest users have the most restricted level of access.
+
+## Permission and roles
+Permissions help you control the access rights a user or group, which are assigned by roles. When someone is assigned a role, they inherit permissions from that role.
+
+## Administrator roles
+Administrator roles allow users elevated access to control who is allowed to do what.
+
+## Member users
+A role with default permissions like being able to manage their profile information. New members are usually assigned this role. Anyone who isn't an administrator or a guest usually falls into this role.
+
+## Guest users
+Guest users have restricted Azure AD organization permissions. When you invite someone to collaborate with your organization, you add them to your Azure AD organization as a guest user. Then you can either send an invitation email that contains a redemption link or send a direct link to an app you want to share. Guest users sign in with their own work, school, or social identities. By default, Azure AD member users can invite guest users. This default can be disabled by someone who has the User Administrator role.
+
+## Add user accounts
+You can add individual user accounts through the Azure portal, Azure PowerShell, or the Azure CLI.
+
+If you want to use the Azure CLI, run the following cmdlet:
+        
+        # Create a new user
+        az ad user create
+
+This command creates a new user by using the Azure CLI.
+
+For Azure PowerShell, run the following cmdlet:
+
+        # Create a new user
+        New-AzureADUser
+
+You can bulk create member users and guests accounts. The following example shows how to bulk invite guest users.
+
+        $invitations = import-csv c:\bulkinvite\invitations.csv
+
+        #messageInfo = New-Object Microsoft.Open.MSGraph.Model.InvitedUserMessageInfo
+
+        $messageInfo.customizedMessageBody = "Hello. You are invited to the Contoso organization."
+
+        foreach ($email in $invitations)
+                {New-Azure-ADMSInvitation `
+                        -InvitedUserEmailAddress $email.InvitedUserEmailAddress `
+                        -InvitedUserDisplayName $email.Name `
+                        -InvitedRedirectUrl https://myapps.microsoft.com `
+                        -SendInvitationMessage $true
+                }
+
+You can create the comma-separated value (CSV) file with the list of all the users you want to add. An invitation is sent to each user in that CSV file.
+
+## Delete user accounts
+You can also delete user accounts through the Azure portal, Azure PowerShell, or the Azure CLI. In PowerShell, run the cmdlet `Remove-AzureADUser`. In the Azure CLI, run the cmdlet `az ad user delete`.
+
+When you delete a user, the account remains in a suspended state for 30 days. During that 30-day window, the user account can be restored.
+
+## Knowledge check
+1. If you delete a user account by mistake, can it be restored? -> The user account can be restored, but only if it was deleted within the last 30 days.
+2. What kind of account would you create to allow an external organization easy access? -> A guest user account for each member of the external team.
+
+<hr>
+
+## Manage app and resource access by using Azure Active Directory groups
+Azure Active Directory (Azure AD) helps you to manage your cloud-based apps, on-premises apps, and resources by using your organization's groups. Your resources can be part of the Azure AD organization, like permissions to manage objects through roles. Or your resources can be external to the organization, like software as a service (SaaS) apps, Azure services, SharePoint sites, and on-premises resources.
+
+## Access management in Azure AD
+- **Azure AD roles**: Use Azure AD roles to manage Azure AD-related resources like users, groups, billing, licensing, application registration, and more.
+- **Role-based access control (RBAC) for Azure resources**: User RBAC roles to manage access to Azure resources like virtual machines, SQL databases, or storage. For example, you could assign an RBAC role to a user to manage and delete SQL databases in a specific resource group or subscription.
+
+## Access rights through single user or group assignment
+- **Direct assignment**: Assign a user the required access rights by directly assigning a role that has those access rights.
+- **Group assignment**: Assign a group the required access rights, and members of the group will inherit those rights.
+- **Rule-based assignment**: Use rules to determine a group membership based on user or device properties. For a user account or device's group membership to be valid, the user or device must meet the rules. If the rules aren't met, the user account or device's group membership is no longer valid. The rules can be simple. You can select prewritten rules or write your own advanced rules.
+
+<hr>
+
+## Collaborate by using guest accounts and Azure Active Directory B2B
+With Azure Active Directory business to business (B2B), you can add people form other companies to your Azure AD tenant as guest users.
+
+## Guest user access in Azure AD B2B
+In any scenario where external users need temporary or restricted access to your organization's resources, give them guest user access. You can grant guest user access with the appropriate restrictions in place. Then remove access when the work is done.
+
+You can use the Azure portal to invite B2B collaboration users. Invite guest users to the Azure AD organization, group, or application. After you invite a user, their account is added to Azure AD as a guest account. 
+
+The guest can get the invitation through email. Or you can share the invitation to an application by using a direct link. The guest then redeems their invitation to access the resources.
+
+By default, users and administrators in Azure AD can invite guest users. But this ability can be limited or disabled by the Global Administrator.
+
+## Collaborate with any partner by using their identities
+If your organization has to manage the identities of each external guest user who belongs to a given partner organization, it faces increased responsibilities. With Azure Active Directory B2B, you don't have to manage your external users' identities. The partner has the responsibility to manage its own identities. External users continue to use their current identities to collaborate with your organization.
+
+## Why use Azure AD B2B instead of federation?
+With Azure AD B2B, you don't take on the responsibility of managing and authenticating the credentials and identities of partners. Your partners can collaborate with you even if they don't have an IT department.
+
+Giving access to external users is much easier than in a federation. You don't need an AD administrator to create and manage external user accounts. Any authorized user can invite other users.
+
+A federation is more complex. A federation is where you have a trust established with another organization, or a collection of domains, for shared access to a set of resources. You might be using an on-premises identity provider and authorization service like Active Directory Federation Services (AD FS) that has an established trust with Azure AD. To get access to resources, all users have to provide their credentials and successfully authenticate against the AD FS server. If you have someone trying to authenticate outside the internal network, you need to set up a web application proxy. The architecture might look something like the following diagram: 
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/create-users-and-groups-in-azure-active-directory/media/6-federation-example.png">
+
+An on-premises federation with Azure AD might be good if your organization wants all authentication to Azure resources to happen in local environment. Administrators can implement more rigorous levels of access control. But this means that, if your local environment is down, users can't access the Azure resources and services they need.
+
+With a B2B collaboration, external teams get the required access to Azure resources and services with the appropriate permissions. There's no need for a federation and trust to be established, and authentication doesn't depend on an on-premises server. Authentication is done directly through Azure. Collaboration becomes simplified, and you don't have to worry about situations where users can't sign in because an on-premises directory isn't available.
+
+<hr>
+
+## Secure your Azure resources with Azure role-based access control (Azure RBAC)
+Learn how to use Azure RBAC to manage access to resources in Azure.
+
+## Objectives
+- Verify access to resources for yourself and others
+- Grant access to resources
+- View activity logs of Azure RBAC changes
+
+<hr>
+
+## Azure subscriptions
+First, remembers that each Azure subscription is associated with a single Azure AD directory. Users, groups, and applications in that directory can manage resources in the Azure subscription. The subscriptions use Azure AD for single sign-on (SSO) and access management. You can extend your on-premises Active Directory to the cloud by using **Azure AD Connect**. This feature allows your employees to manage their Azure subscriptions by using their existing work identities. Why you disable an on-premises Active Directory account, it automatically loses access to all Azure subscriptions connected with Azure AD.
+
+## What is Azure RBAC?
+Azure role-based access control (Azure RBAC) is an authorization system built on Azure Resource Manager that provides fine-grained access management of resources in Azure. With Azure RBAC, you can grant the exact access that users need to do their jobs. For example, you can use Azure RBAC to let one employee manage virtual machines in a subscription while another manages SQL databases within the same subscription.
+
+You grant access by assigning the appropriate Azure role to users, groups, and applications at a certain scope. The scope of a role assignment can be a management group, subscription, a resource group, or a single resource. A role assigned at a parent scope also grants access to the child scopes contained within it. For example, a user with access to a resource group can manage all the resources it contains, like websites, virtual machines, and subnets. The Azure role that you assign dictates what resources the user, group, or application can manage within that scope.
+
+The following diagram depicts how the classic subscription administrator roles, Azure roles, and Azure AD roles are related at a high level. Roles assigned at a higher scope, like an entire subscription, are inherited by child scopes, like service instances.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/secure-azure-resources-with-rbac/media/2-azuread-and-azure-roles.png">
+
+In the preceding diagram, a subscription is associated with only one Azure AD tenant. Also note that a resource group can have multiple resources but is associated with only one subscription. Although it's not obvious from the diagram, a resource can be bound to only one resource group.
+
+## What can I do with Azure RBAC?
+Azure RBAC allows you to grant access to Azure resources that you control. 
+
+Here are some scenarios you can implement with Azure RBAC:
+- Allow one user to manage virtual machines in a subscription and another user to manage virtual networks
+- Allow a database administrator group to manage SQL databases in a subscription
+- Allow a user to manage all resources in a resource group, such as virtual machines, websites, and subnets
+- Allow an application to access all resources in a resource group
+
+## How does Azure RBAC work?
+You control access to resources using Azure RBAC by creating role assignments, which control how permission are enforced. To create a role assignment, you need three elements: a security principal, a role definition, and a scope. YOu can think of these elements as "who", "what", and "where".
+
+**1. Security principal (who)**
+A *security principal* is just a fancy name for a user, group, or application that you want to grant access to.
+
+**2. Role definition (what you can do)**
+A *role definition* is a collection of permissions. It's sometimes just called a role. A role definition lists the permissions that can be performed, such as read, write, and delete. Roles can be high-level, like Owner, or specific, like Virtual Machine Contributor.
+
+Azure includes several built-in roles that you can use. The following lists four fundamental built-in roles:
+
+- Owner: Has full access to all resources, including the right to delegate access to others.
+- Contributor: Can create and manage all types of Azure resources, but can't grant access to others.
+- Reader: Can view existing Azure resources.
+- User Access Administrator: Lets you manage user access to Azure resources.
+
+If the built-in roles don't meet the specific needs of your organization, you can create your own custom roles.
+
+**3. Scope (where)**
+*Scope* is where the access applies to. This is helpful if you want to make someone a Website Contributor, but only for one resource group.
+
+In Azure, you can specify a scope at multiple levels: management group, subscription, resource group, or resource. Scopes are structured in a parent-child relationship. When you grant access at a parent scope, those permissions are inherited by the child scopes. For example, if you assign the Contributor role to a group at the subscription scope, that role is inherited by all resource groups and resources in the subscription.
+
+## Role assignment
+Once you have determined the who, what, and where, you can combine those elements to grant access. A *role assignment* is the process of binding a role to a security principal at a particular scope, for the purpose of granting access. To grant access, you create a role assignment. To revoke access, you remove a role assignment.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/secure-azure-resources-with-rbac/media/2-rbac-overview.png">
+
+## Azure RBAC is an allow model
+Azure RBAC is an allow model. What this means is that when you are assigned a role, Azure RBAC allows you to perform certain actions, such as read, write, and delete. So, if one role assignment grants you read permissions to a resource group and a different role assignment grants you write permissions to the same resource group, you will have read and write permissions on that resource group.
+
+Azure RBAC has something called `NotActions` permissions. Use `NotActions` to create a set of not allowed permissions. The access granted by a role, the effective permissions, is compted by subtracting the `NotActions` operations from the `Actions` operations. For example, the Contributor role has both `Actions` and `NotActions`. The wildcard (*) in `Actions` indicates that it can perform all operations on the control plane. The you subtract the following operations in `NotActions` to compute the effective permissions:
+- Delete roles and role assignments
+- Create roles and role assignments
+- Grants the caller User Access Administrator access at the tenant scope
+- Create or update any blueprint artifacts
+- Delete any blueprint artifacts
+
+<hr>
+
+## Knowledge check
+1. What is a role definition in Azure? -> A collection of permissions with a name that assignable to a user, group, or application.
+2. Suppose an administrator wants to assign a role to allow a user to create and manage Azure resources but not be able to grant access to others. Which of the following built-in roles would support this? -> Contributor
+3. What is the inheritance order for scope in Azure? -> Management group, Subscription, Resource group, Resource.
+4. Suppose a team member can't view resources in a resource group. Where would the administrator go to check the team member's access? -> Go to the resource group and select **Access control (IAM) > Check Access.**
+5. Suppose an administrator in another department needs access to a virtual machine managed by your department. What's the best way to grant them access to just that resource? -> At the resource scope, assign the role with the appropriate access.
+6. Suppose a developer needs full access to a resource group. If you are following least-privilege best practices, what scope should you specify? -> Resource group
+7. Suppose an administrator needs to generate a report of the role assignments for the last week. Where in the Azure portal would they generate that report? -> Search for **Activity log** and filter on the **Create role assignment (roleAssignments)** operation.
+
+<hr>
+
+## Summary
+To grant access, you assign users a role at a particular scope. Using Azure RBAC, you can grant only the amount of access to users that they need to perform their jobs. Azure RBAC has over 70 built-in roles, but if your organization needs specific permissions, you can create your own custom roles. Azure keeps track of your Azure RBAC changes, in case you need to see what changes were made in the past.
+
+
+
