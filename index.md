@@ -1700,5 +1700,1269 @@ Azure RBAC has something called `NotActions` permissions. Use `NotActions` to cr
 ## Summary
 To grant access, you assign users a role at a particular scope. Using Azure RBAC, you can grant only the amount of access to users that they need to perform their jobs. Azure RBAC has over 70 built-in roles, but if your organization needs specific permissions, you can create your own custom roles. Azure keeps track of your Azure RBAC changes, in case you need to see what changes were made in the past.
 
+<hr>
+
+## Allow users to reset their password with Azure Active Directory self-service password reset
+Evaluate self-service password reset to allow users in your organization to reset their passwords or unlock their accounts. Set up, configure, and test self-service password reset.
+
+# Objectives
+- Decide whether to implement self-service password reset
+- Implement self-service password reset to meet your requirements
+- Configure self-service password reset to customize the experience
+
+<hr>
+
+## Self-service password reset in Azure Active Directory
+In Azure AD, any user can change their password if they're already signed in. But if they're not signed in and forgot their password or it's expired, they'll need to reset their password. With SSPR, users can reset their passwords in a web browser or from a Windows sign-in screen to regain access to Azure, Microsoft 365, and any other application that uses Azure AD for authentication.
+
+## How SSPR works
+The user initiates a password reset either by going directly to the password reset portal or by selecting the **Can't access your account** link on a sign-in page. The reset portal takes these steps:
+1. **Localization**: The portal checks the browser's locale setting and renders the SSPR page in the appropriate language.
+2. **Verification**: The user enter their username and passes a captcha to unsure it's a user and not a bot.
+3. **Authentication**: The user enters the required data to authenticate their identity. They might, for example, enter a code or answer a security question.
+4. **Password reset**: If the user passes the authentication tests, they can enter a new password and confirm it.
+5. **Notification**: A message is sent to the user to confirm the reset.
+
+## Authenticate a password reset
+Azure supports six different ways to authenticate reset requests.
+1. **Mobile app notification**: Azure sends a notification to the app
+2. **Mobile app code**: Enter the code from the app
+3. **Email**: Azure sends a code to the address
+4. **Mobile phone**: Azure sends a text message
+5. **Office phone**: You receive an automated phone call
+6. **Security questions**: Answer the questions
+
+In free and trial Azure AD organizations, phone call options aren't supported.
 
 
+## Require the minimum number of authentication methods
+You can specify the minimum number of methods that the user must set up: one or two.
+
+For the security question method, you can specify a minimum number of questions that the user must set up to register for this method.
+
+## Recommendations
+- Enable two or more of the authentication reset request methods
+- Use the mobile app notification or code as the primary method, but also enable the email or office phone methods to support users without mobile devices
+- The mobile phone method isn't a recommended method because it's possible to send fraudulent texts
+- The security question option is the least recommended method because the answers to the security questions might be known to other people.
+
+## Account associated with administrator roles
+- A strong, two-method authentication policy is always applied to accounts with an administrator role, regardless of your configuration for other users
+- The security questions method isn't available to accounts that are associated with an administrator role
+
+## Configure notifications
+Administrators can choose how users are notified of password changes. There are two options that you can enable:
+- Notify users on password resets
+- Notify all admins when other admins reset their password
+
+## License requirements
+The password reset functionality you can use depends on your edition (free, P1, or P2). Any user who is signed in can change their password, regardless of the edition of Azure AD.
+
+## SSPR deployment options
+You can deploy SSPR with password writeback by using Azure AD Connect or cloud sync, depending on the needs of users. Each option can be deployed side-by-side in different domains to target different sets of users. This helps existing users on-premises to writeback password changes while adding an option for user in disconnected domains because of a company merger or split. Cloud sync can also provide higher availability because it doesn't rely on a single instance of Azure AD Connect.
+
+<hr>
+
+## Knowledge check
+1. When is a user considered registered for SSPR? -> When they've registered at least the number of methods that you've required to reset a password.
+2. When you enable SSPR for your Azure AD organization... -> Users can reset their passwords when they can't sign in.
+
+<hr>
+
+## Implement Azure AD self-service password reset
+Before you start to configure SSPR, you need these things in place:
+- An Azure AD organization. This organization must have at least a trial license enabled.
+- An Azure AD account with Global Administrator privileges. You'll ust this account to set up SSPR.
+- A non-administrative user account. You'll use this account to test SSPR (non-admin).
+- A security group to test the configuration with. The non-admin account must be a member of this group. 
+
+## Scope of SSPR rollout
+There are three setting for the **Self-service password reset enabled** property:
+- **Disabled**: No users in the Azure AD organization can use SSPR. This value is the default.
+- **Enabled**: All users in the Azure AD organization can use SSPR.
+- **Selected**: Only the members of the specified security group can use SSPR. You can use this option to enable SSPR for a targeted group of users, who can test it and verity that it works as expected. When you're ready to roll it out broadly, set the property to **Enabled** so that all users have access to SSPR.
+
+## Configure SSPR
+Here are the high-level steps to configure SSPR.
+1. Go to the Azure portal, go to **Active Directory > Password reset**.
+2. Properties:
+- Enable SSPR.
+- You can enable it for all users in the Azure AD organization or for selected users.
+- To enable for selected users, you must specify the security group. Members of this group can use SSPR.
+3. Authentication methods:
+- Choose whether to require one or two authentication methods.
+- Choose the authentication methods that the users can use.
+4. Registration:
+- Specify whether users are required to register for SSPR when they next sign in.
+- Specify how often users are asked to reconfirm their authentication information.
+5. Notifications: Choose whether to notify users and administrators of password resets.
+6. Customization: Provide an email address or web address or web page URL where your users can get help.
+
+<hr>
+<hr>
+
+## Implement and manage storage in Azure
+You will learn how to configure blob storage including tiers and object replication.
+
+## Objectives
+- Identify features and usage cases for Azure Blob storage.
+- Configure Blob storage and Blob access tiers.
+- Configure Blob lifecycle management rules.
+- Configure Blob object replication.
+- Upload and price Blob storage.
+
+<hr>
+
+## Implement blob storage
+Azure Blob storage is a service that stores unstructured data in the cloud as objects/blobs. Blob storage can store any type of text or binary data, such as a document, media file, or application installer. Blob storage is also referred to as object storage.
+
+Common uses of Blob storage include:
+- Serving images or documents directly to a browser.
+- Storing files for distributed access, such as installation.
+- Streaming video and audio.
+- Storing data for backup and restore, disaster recovery, and archiving.
+- Storing data for analysis by an on-premises or Azure-hosted service.
+
+## Blob service resources
+Blob storage offers three types of resources:
+- The storage account
+- Containers in the storage account
+- Blobs in a container
+
+The following diagram shows the relationship between these resources:
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-blob-storage/media/blob-storage-94fb52b8.png">
+
+Note: Within the storage account, you can group as many blobs as needed in a container.
+
+<hr>
+
+## Create blob containers
+
+A container provides a grouping of a set of blobs. All blobs must be in a container. An account can contain an unlimited number of containers. A container can store an unlimited number of blobs. You can create the container in the Azure portal.
+
+**Name**: The name may only container lowercase letters, numbers, and hyphens, and must begin with a letter or a number. The name must also be between 3 and 63 characters long.
+
+**Public access level**: Specifies whether data in the container may be accessed publicly. By default, container data is private to the account owner.
+
+- Use **Private** to ensure there is no anonymous access to the container and blobs.
+- Use **Blob** to allow anonymous public read access for blobs only.
+- Use **Container** to allow anonymous public read and list access to the entire container, including the blobs.
+
+Note: You can also create the Blob container with PowerShell using the **New-AzStorageContainer** command.
+
+<hr>
+
+## Create blob access tiers
+Azure Storage provides different options for accessing block blob data based on usage patterns. By selecting the correct access tier for your needs, you can store your block blob data in the most cost-effective manner.
+
+- **Hot**: Optimized for frequent access of objects in the storage account. New storage accounts are created in the Hot tier by default.
+- **Cool**: Optimized for storing large amounts of data that is infrequently accessed and stored for at least 30 days. Storing data in the Cool tier is more cost-effective, but accessing that data may be more expensive than accessing the data in the Hot tier.
+- **Archive**: Optimized for data that can tolerate several hours of retrieval latency and will remain in the Archive tier for at least 180 days. Most cost-effective option for storing data, but accessing that data is more expensive than accessing data in the Hot or Cool tiers.
+
+Note: When data usage changes, you can switch access tiers at any time.
+
+<hr>
+
+## Add blob lifecycle management rules
+Data sets have unique life cycles. Early in the lifecycle, people access some data often. But the need to access drops drastically as the data ages. Some data stays idle and is rarely access once stored. Some data expires days or months after creation, while other data sets are actively read and modified through their lifetimes. Azure Blob storage lifecycle management offers a rich, rule-based policy for GPv2 and Blob storage accounts. Use the policy to transition your data to the appropriate access tiers or expire at the end of the data's lifecycle.
+
+The lifecycle management policy lets you:
+- Transition blobs to a cooler storage tier (hot to cool, hot to archive, or cool to archive) to optimize for performance and cost.
+- Delete blobs at the end of their lifecycle.
+- Define rules to be run once per day at the storage account level.
+- Apply rules to containers or a subset of blobs.
+
+By adjusting storage tiers in respect to the age of data, you can design the least expensive storage options for your needs. Lifecycle management policy rules are available to move aging data to cooler tiers.
+
+<hr>
+
+## Determine blob object replication
+Object replication asynchronously copies block blobs in a container according to rules that you configure. The contents of the blob, any versions associated with the blob, and the blob's metadata and properties are all copied from the source container to the destination container.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-blob-storage/media/blob-object-replication-21fd3c07.png">
+
+## Scenarios
+- **Minimizing latency**: Object replication can reduce latency for read requests by enabling clients to consume data from a region that is in closer physical proximity.
+- **Increase efficiency for compute workloads**: Compute workloads can process the same sets of block blobs in different regions.
+- **Optimizing data distribution**: You can process or analyze data in a single location and then replicate just the results to other regions.
+- **Optimizing costs**: After your data has been replicated, you can reduce costs by moving it to the archive tier using life-cycle management policies.
+
+## Considerations
+Object replication:
+- requires that blob versioning is enabled on both the source and destination accounts.
+- doesn't support blob snapshots. Any snapshots on a blob in the source account are not replicated to the destination account.
+- is supported when the source and destination accounts are in the hot or cool tier. The source and destination accounts may be in different tiers.
+- when configured, you create a replication policy that specifies the source storage account and the destination account. A replication policy includes one or more rules that specify a source container and a destination container and indicate which block blobs in the source container will be replicated.
+
+<hr>
+
+## Upload blobs
+A blob can be any type and size file. Azure Storage offers three types of blobs: *block* blobs, *page* blobs, and *append* blobs. You specify the blob type and access tier when you create the blob.
+
+- **Block blobs (default)** consist of blocks of data assembled to make a blob. Most scenarios using Blob storage employ block blobs. Ideal for storing text and binary data in the cloud, like files, images, and videos.
+- **Append blobs** are like block blobs in that they are made up of blocks, but they are optimized for append operations, so they are useful for logging scenarios.
+-**Page blobs** can be up to 8 TB in size and are more efficient for frequent read/write operations. Azure virtual machines use page blobs as OS and data disks.
+
+Note: Once the blob has been created, its type cannot be changed.
+
+## Blob upload tools
+There are multiple methods to upload data to blob storage, including the following methods:
+
+- **AzCopy** is an command-line tool for Windows and Linux that copies data to and from Blob storage, across containers, or across storage accounts.
+- **Azure Storage Data Movement Library** is a .NET library for moving data between Azure Storage services. The AzCopy utility is built with the Data Movement library.
+- **Azure Data Factory** supports copying data to and from Blob storage by using the account key, shared access signature, service principal, or managed identities for Azure resources authentications
+- **Blobfuse** is a virtual file system driver for Azure Blob storage. You can use blobfuse to access your existing block blob data in your Storage account through the Linux file system.
+- **Azure Data Box Disk** is a service for transferring on-premises data to Blob storage when large datasets or network constraints make uploading the data over the wire unrealistic. You can use Azure Data Box Disk to request solid-state disks (SSDs) from Microsoft. You can then copy your data to those disks and ship them back to Microsoft to be uploaded into Blob storage.
+- **Azure Import/Export** service provides a way to export large amounts of data from your storage account to hard drives that you provide and that Microsoft then ships back to you with your data.
+
+<hr>
+
+## Determine storage pricing
+All storage accounts use a pricing model for blob storage based on the tier of each blob. When using a storage account, the following billing considerations apply:
+
+- **Performance tiers**: As the performance tier gets cooler, the per-gigabyte cost decreases.
+- **Data access costs**: Data access charges increase as the tier gets cooler. For data in the cool and archive storage tier, you are charged a per-gigabyte data access charge for reads.
+- **Transaction costs**: There is a per-transaction charge for all tiers. The charge increases as the tier gets cooler.
+- **Geo-Replication data transfer costs**: Applies only to accounts with geo-replication configured, including GRS and RA-GRS. Geo-replication data transfer incurs a per-gigabyte charge.
+- **Outbound data transfer costs**: Data that is transferred out of an Azure region incur billing for bandwidth usage on a per-gigabyte basis. This billing is consistent with general-purpose storage accounts.
+- **Changing the storage tier**: Changing from cool to hot incurs a charge equal to reading all the data existing in the storage account. However, changing the account storage tier from hot to cool incurs a charge equal to writing all the data into the cool tier (GPv2 accounts only).
+
+<hr>
+
+## Knowledge check
+1. Which of the following best describes Azure blob storage access tiers? -> The administrator can switch between hot and cool performance tiers at any time.
+2. Which of these changes between access tiers will happen immediately? -> Hot to Cool (decreasing is immediate)
+3. Which of the following best describes blob object replication? -> Object replication doesn't support blob snapshots.
+
+<hr>
+
+## Configure storage security
+You will learn how to configure common storage security features like storage access signatures.
+
+## Objectives
+- Configured shared access signatures including URI and SAS parameters
+- Configure storage service encryption
+- Implement customer-managed keys
+- Recommend opportunities to improve storage security
+
+## Review storage security strategies
+Azure Storage provides a comprehensive set of security capabilities that together enable developers to build secure applications.
+
+- **Encryption**: All data written to Azure Storage is automatically encrypted using Storage Service Encryption (SSE).
+- **Authentication**: Azure AD and RBAC are supported for Azure Storage for both resource management operations and data operations as follows:
+- You can assign RBAC roles scoped to the storage account to security principals and use Azure AD to authorize resource management operations such as key management.
+- Azure AD integration is supported for data operations on the Blob and Queue services.
+- **Data in transit**: Data can be secured in transit between an application and Azure by using Client-Side Encryption, HTTPS, or SMB 3.0.
+- **Disk encryption**: OS and data disks by Azure VMs can be encrypted using Azure Disk Encryption.
+- **Shared Access Signatures**: Delegated access to the data objects in Azure Storage can be granted using Shared Access Signatures.
+
+## Authorization options
+Every request made against a secured resource in the Blob, File, Queue, or Table service must be authorized. Authorization ensure that resources in your storage account are accessible only when you want them to be, and only to those users or applications th whom you grant access. Options for authorizing requests to Azure Storage include:
+
+- **Azure Active Directory (Azure AD)**
+- **Shared Key**: Shared Key authorization relies on your account access keys and other parameters to produce an encrypted signature string that is passed on the request in the Authorization header.
+- **Shared access signatures**: Shared access signatures (SAS) delegate access to a particular resource in your account with specified permissions and over a specified time interval.
+- **Anonymous access to containers and blobs**: You can optionally make blob resources public at the container or blob level. A public container or blob is accessible to any user for anonymous read access. Read requests to public containers and blobs do not require authorization.
+
+<hr>
+
+## Create shared access signatures
+A shared access signature (SAS) is a URI that grants restricted access rights to Azure Storage resources. You can provide a SAS to clients who shouldn't have access to your storage account key. By distributing a SAS URI to these clients, you grant them access to a resource for a specified period of time. SAS is a secure way to share your storage resources without compromising your account keys.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-storage-security/media/configure-secure-signatures-be02fa89.png">
+
+A SAS gives you granular control over the type of access you grant to clients who have the SAS including:
+
+- An account-level SAS can delegate access to multiple storage services. For example, blob, file, queue, and table.
+- An interval over which the SAS is valid, including the start time and the expiry time.
+- The permissions granted by the SAS. For example, a SAS for a blob might grant read and write permissions to that blob, but not delete permissions.
+
+Note: SAS provides both **account-level** and **service-level** control. The account-level SAS delegates access to resources in one or more of the storage services. The service-level SAS delegates access to a resource in just one of the storage services.
+
+Optionally, you can also:
+- Specify an IP address or range of IP addresses form which Azure Storage will accept the SAS. For example, you might specify a range of IP addresses belonging to your organization.
+- Specify the protocol over which Azure Storage will accept the SAS. You can use this optional parameter to restrict access to clients using HTTPS.
+
+Note: A stored access policy can provide another level of control over service-level SAS on the server side. You can group shared access signatures and provide other restrictions by using policy.
+
+## Identify URI and SAS parameters
+When you create your SAS, a URI is created using parameters and tokens. The URI consist of your Storage Resource URI and the SAS token.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-storage-security/media/secure-parameters-76db5bda.png">
+
+Below is an example URI:
+
+        https://myaccount.blob.core.windows.net/?restype=service&comp=properties&sv=2015-04-05&ss=bf&srt=s&st=2015-04-29T22%3A18%3A26Z&se=2015-04-30T02%3A23%3A26Z&sr=b&sp=rw&sip=168.1.5.60-168.1.5.70&spr=https &sig=F%6GRVAZ5Cdj2Pw4txxxxx
+
+Each parameter has a specific meaning.
+
+**Name** | **SAS portion** | **Description**
+-------- | --------------- | ---------------
+Resource URI | https://myaccount.blob.core.windows.net/?restype=service&comp=properties | The Blob service endpoint, with params for getting service properties (when called with GET) or setting service properties (when called with SET)
+Storage services version | sv=2015-04-05 | For storage services version 2012-02-12 and later, this param indicates the version to use
+Services | ss=bf | The SAS applies to the Blob and File services
+Resource types | srt=s | The SAS applies to service-level operations
+Start time | st=2015-04-29T22%3A18%3A26Z | Specified in UTC time. If you want the SAS to be valid immediately, omit the start time
+Expiry time | se=2015-04-30T02%3A23%3A26Z | Specified in UTC time
+Resource | sr=b | The resource is a blob
+IP Range sip=168.1.5.60-168.1.5.70 | The range of IP addresses from which a request will be accepted
+Protocol | spr=https | Only requests using HTTPS are permitted
+Signature | sig=F%6GRVAZ5Cdj2Pw4tgU7IlSTkWgn7bUkkAg8P6HESXwmf%4B | Used to authenticate access to the blob. 
+
+<hr>
+
+## Determine storage service encryption
+Azure **Storage Service Encryption** (SSE) for data at rest protects your data by ensuring your organizational security and compliance commitments are met.
+
+SSE automatically encrypts your data before persisting it to Azure-managed Disks, Azure Blob, Table storage, or Azure Files, and decrypts the data before retrieval.
+
+SSE encryption, encryption at rest, decryption, and key management are transparent to users. All data written to the Azure storage platform is encrypted through 256-bit AES encryption, on the of the strongest block ciphers available.
+
+Note: SSE is enabled for all new and existing storage accounts and cannot be disabled. Because your data is secured by default, you don't need to modify your code or applications.
+
+## Create customer managed keys
+The Azure Key Vault can manage your encryption keys. You can create your own an store them in the key vault, or use Key Vault's API to generate encryption keys.
+
+Customer-managed keys give you more flexibility and control. You can create, disable, audit, rotate, and define access controls.
+
+Note: Customer-managed keys can be used with SSE. You can use either a new or existing key vault and key. The storage account and the key vault must be in the same region, but they can be in different subscriptions.
+
+<hr>
+
+## Apply storage security best practices
+
+## Risks
+When you use shared access signatures in your apps, you should be aware of two potential risks.
+- If a SAS is compromised, it can be used by anyone who obtains it.
+- If a SAS provided to a client application expires and the application is unable to retrieve a new SAS from your service, then the application's functionality may be hindered.
+
+## Recommendations
+- Always use HTTPS to create or distribute a SAS
+- Reference stored access policies where possible
+- Use near-term expiration times on an unplanned SAS
+- Have client automatically renew the SAS if necessary
+- Be careful with SAS start time (if you need access now, start time about 15 minutes in the past)
+- Be specific with the resource to be accessed
+- Understand that your account will be billed for any usage, including that done with SAS
+- Validate data written using a SAS
+- Don't assume SAS is always the correct choice
+- Use Storage Analytics to monitor your application
+
+<hr>
+
+## Knowledge check
+1. A company uses an Azure storage account for storing large numbers of video and audio files. Containers store each type of file and access should be limited to those files. Additionally, the files can only be accessed through shared access signatures. The company wants to be able to revoke access to the files and to change the period for which users can access the files. Which of the following is the easiest way to meet the requirement? -> Implement stored access polices for each container to enable revocation of access or change of duration. 
+2. When configuring network access to an Azure Storage Account, what is the default network rule? -> To allow all connections from all networks (dangerous!)
+3. The company is planning on delegation model for the Azure storage. Apps in the production environment must have unrestricted access to storage resources. Which of the following is the best course of action? -> Use access keys for the production apps (access keys provide unrestricted access to the storage resources)
+
+<hr>
+
+## Configure Azure files and Azure File Sync
+You configure Azure File shares to provide a central location for documents, and Azure File Sync to keep the information up to date across multiple offices.
+
+## Objectives
+- Identify when to use Azure files verses Azure Blobs
+- Configure Azure file shares with file share snapshots
+- Identify features and usage cases of Azure File Sync
+- Identify File Sync components and configuration steps
+
+<hr>
+
+## Compare files to blobs
+File storage offers shared storage for applications using the industry standard SMB protocol. Microsoft Azure VMs and cloud services can share file data across application components via mounted shares, and on-premises applications can also access file data in the share.
+
+Apps running in Azure VMs or cloud services can mount a file storage share to access file data. This process is similar to how a desktop application would mount a typical SMB share. Any number of Azure VMs or roles can mount and access the File storage share simultaneously.
+
+## Common uses of file storage
+- **Replace and supplement**: Azure Files can be used to completely replace or supplement traditional on-premises file servers or NAS devices.
+- **Access anywhere**: Popular operating systems such as Windows, macOS, and Linux can directly mount Azure File shares wherever they are in the world.
+- **Lift and shift**: Azure Files make it easy to "lift and shift" applications to the cloud that expect a file share to store file applications or user data.
+- **Azure File Sync**: Azure File shares can also be replicated with Azure File Sync to Windows Servers, either on-premises or in the cloud, for performance and distributed caching of the data where it's being used.
+- **Shared applications**: Storing shared application settings, for example in configuration files.
+- **Diagnostic data**: Storing diagnostic data such as logs, metrics, and crash dumps in a shared location.
+- **Tools and utilities**: Storing tools and utilities needed for developing or administering Azure virtual machines or cloud services.
+
+## Files and blobs comparison
+Sometimes it is difficult to decide when to use file shares instead of blobs or disk shares. Take a minute to review this table that compares the different features.
+
+## Azure Files
+- Provides SMB, NFS, client libraries, and a REST interface.
+- Use when you want to "lift and shift" an application to the cloud that already uses the native file system APIs to share data between it and other apps running in Azure.
+
+## Azure Blobs
+- Provides client libraries and a REST interface that allows unstructured data to be stored and accessed at a massive scale in block blobs.
+- Use when you want your application to support streaming and random-access scenarios and you want to be able to access your application data form anywhere.
+
+Other distinguishing features, when selecting Azure files:
+- Azure files are true directory objects. Azure blobs are a flat namespace.
+- Azure files are accessed through file shares. Azure blobs are accessed through a container.
+- Azure files provide shared access across multiple VMs. Azure disks are exclusive to a single virtual machine.
+
+<hr>
+
+## Manage file shares
+To access your files, you will need a storage account. After the storage account is created, you can create the file share.
+
+## Mapping file shares (Windows)
+You can connect to your Azure file share with Windows or Windows Server. Just select **Connect** from your virtual machine page.
+
+Note: Ensure port 445 is open. Azure Files uses SMB protocol. SMB communicates over TCP port 445. Also, ensure you firewall is not blocking TCP ports 445 from the client machine.
+
+## Mounting file shares (Linux)
+You can also connect to your Azure file share with Linux machines. Just select **Connect** form the VM page. Azure file shares can be mounted in Linux distributions using the CIFS kernal client. File mounting cna be done on-demand with the mount command or on-boot (persistent) by creating an entry in /etc/fstab.
+
+## Secure transfer required
+The secure transfer option enhances the security of your storage account by only allowing requests to the storage account by secure connection. For example, when calling REST APIs to access your storage accounts, you must connect using HTTPS. Any requests using HTTP will be rejected when *Secure transfer required* is enabled.
+
+<hr>
+
+## Create file share snapshots
+Azure Files provides the capability to take share snapshots of file shares. Share snapshots capture a point-in-time, read-only copy of your data.
+
+Share snapshot capability is provided at the file share level. Retrieval is provided at the individual file level, to allow for restoring individual files. You cannot delete a share that has share snapshots unless you delete all the share snapshots first.
+
+Share snapshots are incremental in natures. Only the data that has changed after your most recent share snapshot is saved. Incremental snapshots minimizes the time required to create the share snapshot and saves on storage costs. Even though share snapshots are saved incrementally, you need to retain only the most recent share snapshot in order to restore the share.
+
+## When to use share snapshots
+- Protection against application error and data corruption
+- Protection against accidental deletions or unintended changes
+- General backup purposes
+
+<hr>
+
+## Implement file sync
+Use **Azure File Sync** to centralize your organization's file shares in Azure Files, while keeping the flexibility, performance, and compatibility of an on-premises file server. Azure File Sync transforms Windows Server into a quick cache of your Azure file share. You can use any protocol that's available on Windows Server to access your data locally, including SMB, NFS, and FTPS. You can have as many caches as you need across the world.
+
+There are many uses and advantages to file sync:
+- Lift and shift
+- Branch offices
+- Backup and disaster recovery
+- File archiving
+
+<hr>
+
+## Identify file sync components
+
+**Storage Sync Service**: Top-level Azure resource for Azure File Sync. A subscription can have multiple Storage Sync Service resources deployed.
+
+**Sync group**: Defines the sync topology for a set of files. Endpoints within a sync group are kept in sync with each other. A Storage Sync Service can host as many sync groups as you need.
+
+**Registered server**: Represents a trust relationship between your server (or cluster) and the Storage Sync Service. You can register as many servers to a Storage Sync Service instance as you want.
+
+**Azure File Sync agent**: A downloadable packaged that enables Windows Server to be synced with an Azure file share. The agent has three main components:
+1. FileSyncSvc.exe: Background server that monitors changes on server endpoints and for initiating sync sessions to Azure.
+2. StorageSync.sys: File system filter, responsible for tiering files to Azure Files (when cloud tiering is enabled).
+3. PowerShell management cmdlets: Interact with the Microsoft.StorageSync Azure resource provider.
+
+**Server endpoint**: represents a specific location on a registered server, such as a folder on a server volume. Multiple server endpoints can exist on the same volume if their namespaces do not overlap.
+
+**Cloud endpoint**: A file share that is part of the sync group. The entire Azure file share syncs, and an Azure file share can be a member of only one cloud endpoint. An Azure file share can be a member of only one sync group. If you add an Azure file share that has an existing set of files as a cloud endpoint to a sync group, the existing files are merged with any other files that are already on other endpoints in the sync group.
+
+## Deploy Azure File Sync
+There are several high-level steps for configuring File Sync.
+
+<img width="517" alt="image" src="image.png">
+
+1. **Deploy the Storage Sync Service**: Can be deployed from the Azure portal, you will need to provide Name, Subscription, Resource Group, and Location.
+2. **Prepare Windows Server to use with Azure File Sync**
+3. **Install the Azure File Sync**
+4. **Register Windows Server with Storage Sync Service**
+
+<hr>
+
+## Cloud tiering overview
+An optional feature of Azure File Sync, decreases the amount of local storage required while keeping the performance of an on-premises file server.
+
+When enabled, this features stores only frequently accessed (hot) files on your local server. Infrequently accessed (cool) files are split into namespace (file and folder structure) and file content. The namespace is stored locally and the file content stored in an Azure file share in the cloud.
+
+## How cloud tiering works
+when you enable cloud tiering, there are two policies that you can set to inform Azure File Sync when to tier cool files, the **volume free space policy** and the **date policy**.
+
+The **volume free space policy** tells Azure File Sync to tier cool files to the cloud when a certain amount of space is taken up on your local disk.
+
+The **date policy** tiers cool files to the cloud if they haven't been accessed for x number of days.
+
+<hr>
+
+## Knowledge check
+1. Which of the following is correct about cloud tiering? -> Archives infrequently accessed files to free up space on the local file share.
+2. A local manufacturing company runs dedicated software in their warehouse to keep track of stock. The software needs to run on machines in the warehouse, but the management team want to access the output from the main office. The limited bandwidth available in the warehouse has caused problems in the past when they tried to use cloud-based solutions. What is the best way to sync these files with the cloud? -> Use a machine in the warehouse to host a file share, install Azure File Sync, and share a drive with the rest of the warehouse.
+3. Which of the following best describes the Azure File Sync agent? -> It's installed on a server to enable Azure File Sync replication between the local file share and an Azure file share.
+
+<hr>
+
+## Summary
+Azure Files offers fully managed file shares in the cloud that are accessible via the industry standard Server Message Block (SMB) protocol or Network File System (NFS) protocol. Azure File Sync is a service that allows you to cache several Azure file shares on an on-premises Windows Server or cloud VM.
+
+<hr>
+
+## Configure storage with tools
+You will learn how to configure storage with tools like Storage Explorer and AZCopy.
+
+## Objectives
+- Configure and use Storage Explorer
+- Configure the Import and Export service
+- Configure and use AZCopy 
+
+<hr>
+
+## Use Azure Storage Explorer
+Azure Storage Explorer is a standalone app that makes it easy to work with Azure Storage data on Windows, macOS, and Linux. With Storage Explorer, you can access multiple accounts and subscriptions and manage all your storage content.
+
+Requires both management (Azure Resource Manager) and data layer permissions, which means you need Azure Active Directory permissions, which give you access to your storage account, the containers in the account, and the data in the containers.
+
+## Connecting to storage
+- Connect to storage accounts associated with your Azure subscriptions.
+- Connect to storage accounts and services that are shared from other Azure subscriptions.
+- Connect to and manage local storage by using the Azure Storage Emulator.
+
+In addition you can work with storage accounts in global and national Azure:
+- **Connect to an Azure subscription**: Manage storage resources that belong to you Azure subscription.
+- **Work with local development storage**: Manage local storage by using the Azure Storage Emulator.
+- **Attach to external storage**: Manage storage resources that belong to another Azure subscription or that are under national Azure clouds by using the storage account's name, key, and endpoints.
+- **Attach a storage account by using a SAS**: Manage storage resources that belong to another Azure subscription by using a shared access signature (SAS).
+- **Attach a service by using a SAS**: Manage a specific storage service (blob container, queue, or table) that belongs to another Azure subscription by using a SAS.
+
+## Accessing external storage accounts
+Storage Explorer lets you attach to external storage accounts so that storage accounts can be easily shared. To create the connection you will need the storage **Account name** and **Account key**. In the portal, the account key is called **key1**.
+
+To use a name and key form a national cloud, use the **Storage endpoints domain** drop-down to select **Other** and then enter the custom storage endpoint domain.
+
+Note: Access keys provide access to the entire storage account. Store your access keys securely. We recommend regenerating your access keys regularly. You are provided tow access keys so that you can maintain connections using one while regenerating the other.
+
+When you regenerate your access keys, you must update any Azure resources and applications that access this storage account to use the new keys. This action will not interrupt access to disks from your virtual machines.
+
+<hr>
+
+## Use the import and export service
+Used to securely import large amounts of data to Azure Blob storage and Azure Files by shipping disk drives to an Azure datacenter. This service can also be used to transfer data from Azure Blob storage to disk drives and ship to your on-premises sites. You must supply your own disk drives and transfer the data yourself.
+
+## Usage cases
+Consider using Azure Import/Export service when uploading or downloading data over the network is too slow or getting more network bandwidth is cost-prohibitive. Situations such as:
+
+- Migrating data to the cloud
+- Content distribution
+- Backup
+- Data recovery
+
+## Import jobs
+An Import job securely transfers large amounts of data to Azure Blob storage (block and page blobs) and Azure Files by shipping disk drives to an Azure datacenter. In this case, you will be shipping hard drives containing your data.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-storage-tools/media/import-jobs-3dd387ae.png">
+
+In order to perform an import, follow these steps:
+1. Create an Azure Storage account.
+2. Identify the numbers of disks that you will need to accommodate all the data that you want to transfer.
+3. Identify a computer that you will use to perform the data copy, attach physical disks that you will ship to the target Azure datacenter, and install the WAImportExport tool.
+4. Run the WAImportExport tool to copy the data, encrypt the drive with BitLocker, and generate journal files.
+5. Use the Azure portal to create an import job referencing the Azure Storage account. As part of the job definition, specify the destination address representing the Azure region where the Azure Storage account resides.
+6. Ship the disks to the destination that you specified when creating the import job and update the job by providing the shipment tracking number.
+7. Once the disks arrive at the destination, the Azure datacenter staff will carry out data copy to the target Azure Storage account and ship the disks back to you.
+
+## Export jobs
+Export jobs transfer data from Azure storage to hard disk drives and ship to your on-premises sites.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-storage-tools/media/export-jobs-850746e1.png">
+
+In order to perform the export, follow these steps:
+1. Identify the data in the Azure Storage blobs that you intent to export.
+2. Identify the number of desks you need to transfer the data
+3. Use the Azure Portal to create an export job referencing the Azure Storage account. Specify the blobs you want to export, the return address, and your carrier account number. Microsoft will ship your disks back to you after the export process is complete.
+4. Ship the required number of disks to the Azure region hosting the storage account. Update the job by providing the shipment tracking number.
+5. Once the disks arrive, staff will carry out data copy from the storage account to the disks and encrypt the volumes using BitLocker and ship them back to you. The BitLocker keys will be available in the Azure portal.
+
+## Import/Export Tool (WAImportExport)
+The **Azure Import/Export Tool** is the drive preparation and repair tool that you can use with the Microsoft Azure Import/Export service. You can use the tool for the following functions:
+- Before creating an import job, you can use this tool to copy data to the hard drives you are going to ship.
+- After an import job has completed, you can use this tool to repair any blobs that were corrupted, were missing, or conflicted with other blobs.
+- After you receive the drives from a completed export job, you can use this tool to repair any files that were corrupted or missing on the drives.
+
+Import/Export service requires the use of internal SATA II/III HDDs or SSDs. EAch dist contains a single NTFS volume that you encrypt with BitLocker when preparing a drive. To prepare a drive, you must connect it to a computer running a 64-bit version of the Windows client or server operating system to run the WAImportExport tool from that computer. The WAImportExport tool handles data copy, volume encryption, and creation of journal files. Journal files are necessary to create an import/export job and help ensure the integrity of the data transfer.
+
+Note: You can create jobs directly from the Azure portal or you can accomplish this programmatically by using Azure Storage Import/Export REST API.
+
+<hr>
+
+## Use AzCopy
+An alternative method for transferring data is **AzCopy**. AzCopy v10 is the next-generation command-line utility for copying data to/from Microsoft Azure Blob and File storage, which offers a redesigned command-line interface and new architecture for high-performance reliable data transfers. Using AzCopy, you can copy data between a file system and a storage account, or between storage accounts.
+
+## New features
+Synchronize a file system to Azure Blob or vice versa. Idea for incremental copy scenarios.
+
+- Supports Azure Data Lake Storage Gen2 APIs.
+- Supports copying an entire account (Blob service only) to another account.
+- Account to account copy is now using the new Put from URL APIs. No data transfer to the client is needed which makes the transfer faster.
+- List/Remove files and blobs in a given path.
+- Supports wildcard patterns in a path, --include flags, and --exclude flags.
+- Improved resiliency: every AzCopy instance will create a job order and a related log file. You can view and restart previous jobs and resume failed jobs. AzCopy will also automatically retry a transfer after a failure.
+- General performance improvements.
+
+## Authentication options
+- **Azure AD**: (Supported for Blob and ADLS Gen2 services). Use .\azcopy login to sign in using Azure Active Directory. The user should have *Storage Blob Data Contributor* role assigned to write to Blob storage using Azure Active Directory authentication.
+- **SAS tokens**: (Supported for Blob and File services). Append the SAS token to the blob path on the command line to use it.
+
+## Getting started
+AzCopy has a simple self-documented syntax. Here's how you can get a list of available commands:
+
+        azcopy --help
+
+The basic syntax for AzCopy commands is:
+
+        azcopy copy [source] [destination] [flags]
+
+Note: AzCopy is available on Windows, Linux, and macOS.
+
+<hr>
+
+## Knowledge check
+1. A manufacturing company's finance department wants to control how the data is being transferred to Azure Files. They want a graphical tool to manage the process, but they don't want to use the Azure portal. What tool would be best in this situation? -> Azure Storage Explorer
+2. There is an existing storage account in Azure that stores unstructured data. The organization creates a new storage account. What is the best way to move the existing data to the new storage account? -> Use the AzCopy command-line tool.
+3. The finance team needs to transfer a series of large files to blob storage. It may take several hours to upload each file. Everyone is concerned if the transfer fails, it will have to be restarted. Which tool is the most appropriate for this task? -> AzCopy
+
+<hr>
+
+## Create an Azure storage account
+Create an Azure Storage account with the correct options for your business needs.
+
+## Objectives
+- Decide how many storage accounts you need for your project
+- Determine the appropriate settings for each storage account
+- Create a storage account using the Azure portal
+
+<hr>
+
+## What is Azure Storage?
+*Azure Storage* includes Azure Blobs, Azure Files, Azure Queues, and Azure Tables. These four data services are all primitive, cloud-based storage services, and are often used together in the same application.
+
+## What is a storage account?
+A *storage account* is a container that groups a set of Azure Storage services together. Only data services from Azure Storage can be included in a storage account (Azure Blobs, Azure Files, Azure Queues, and Azure Tables). 
+
+Combining data services into a single storage account enables you to manage them as a group. The settings you specify when you create the account, or any changes that you make after creation, apply to all services in the storage account. Deleting a storage account deletes all the data stored inside.
+
+A storage account is an Azure resource and is part of a resource group.
+
+Other Azure data services, such as Azure SQL and Azure Cosmos DB, are managed as independent Azure resources and cannot be included in a storage account.
+
+## Storage account settings
+A storage account defines a policy that applies to all the storage services in the account. For example, you could specify that all the contained services will be stored in the West US datacenter, accessible only over HTTPS, and billed to the sales department subscription. 
+
+The setting that are defined by a storage account are:
+
+- **Subscription**: The Azure Subscription that will be billed for the services in the account.
+
+- **Location**: The datacenter that will store the services in the account.
+
+- **Performance**: Determines the data services you can have in your storage account and the type of hardware disks used to store the data
+
+- Standard allows you to have any data service (Blob, File, Queue, Table) and uses magnetic disk drives.
+- Premium provides mores services for storing data and uses sold0state drives (SSD) for storage.
+
+- **Replication**: Determines the strategy used to make copies of your data to protect against hardware failure or natural disaster. At a minimum, Azure automatically maintains three copies of your data within the datacenter associated with the storage account. A minimum replication is called locally redundant storage (LRS), and guards against hardware failure but does not protect you from an event that incapacitates the entire datacenter. You can upgrade to one of the other options such as geo-redundant storage (GRS) to get replication at different datacenters across the world.
+
+- **Access tier**: Controls how quickly you will be able to access the blobs in a storage account.
+
+- **Secure transfer required**: A security feature that determines the supported protocols for access. Enabled requires HTTPS, while disables allows HTTP.
+
+- **Virtual networks**: A security feature that allows inbound access requests only from the virtual network(s) you specify.
+
+## How many storage accounts do you need?
+A storage account represents a collection of settings like location, replication strategy, and subscription owner. You need one storage account for each group of settings that you want to apply to your data. The number of storage accounts you need is typically determined by your data diversity, cost sensitivity, and tolerance for management overhead.
+
+## Data diversity
+Organizations often generate data that differs in where it is consumed, how sensitive it is, which group pays the bills, etc. Diversity along any of these vectors can lead to multiple storage accounts. Let's consider two examples:
+
+1. Do you have data that is specific to a country or region? If so, you might want to store the data in a datacenter in that region or country for performance and compliance reasons. You will need one storage account for each geographical region.
+
+2. Do you have some data that is proprietary and some for public consumption? If so, you could enable virtual networks for the proprietary data and not for the public data. Separating proprietary data and public data will also require separate storage accounts.
+
+In general, increased diversity means an increased number of storage accounts.
+
+## Cost sensitivity
+A storage account by itself has no financial cost; however, the settings you choose for the account do influence the cost of services in the account. Geo-redundant storage costs more than locally redundant storage. Premium performance and the Hot access tier increase the cost of blobs.
+
+You can use multiple storage accounts to reduce costs. For example, you could partition you data into critical and non-critical categories. You could place your critical data into a storage account with geo-redundant storage and put your non-critical data in a different storage account with locally redundant storage.
+
+A typical strategy is to start with an analysis of your data and create partitions that share characteristics like location, billing, and replication strategy, and then create one storage account for each partition.
+
+## Choose your account settings
+There are three settings that apply to the account itself, rather than to the data stored in the account:
+
+- Name
+- Deployment model
+- Account kind
+
+These settings impact how you manage your account and the cost of the services within it.
+
+## Name
+Each storage account has a name. The name must be globally unique within Azure, use only lowercase letters and digits and be between 3 and 24 characters.
+
+## Deployment model
+A *deployment model* is the system Azure uses to organize your resources. The model defines the API that you use to create, configure, and manage those resources. Azure provides two deployment models:
+
+- **Resource Manager**: the current model that uses the Azure Resource Manager API
+- **Classic**: a legacy offering that uses the Azure Service Management API
+
+Most Azure resources only work with Resource Manager, and makes it easy to decide with model to choose. However, storage accounts, virtual machines, and virtual networks support both, so you must choose one or the other when you create your storage account.
+
+The key feature difference between the two models is their support for grouping. The Resource Manager model adds the concept of a *resource group*, which is not available in the classic model. A resource group lets you deploy and manage a collection of resources as a single unit.
+
+Microsoft recommends that you use *Resource Manager* for all new resources.
+
+## Account kind
+Storage account *kind* is a set of policies that determine which services you can include in the account and the pricing of those services. There are three kinds of storage accounts:
+
+- **StorageV2 (general purpose v2)**: the current offering that supports all storage types and all of the latest features
+- **Storage (general purpose v1)**: a legacy kind that supports all storage types but may not support all features
+- **Blob storage**: a legacy kind that allows only block blobs and append blobs
+
+Microsoft recommends that you use the **General-purpose v2** option for new storage accounts.
+
+There are a few special cases that can be exceptions to this rule. For example, pricing for transactions is lower in general purpose v1, which would allow you to slightly reduce costs if that matches your typical workload.
+
+The core advice here is to choose the **Resource Manager** deployment model and the **StorageV2(general purpose v2)** account kind for all your storage accounts.
+
+## Choose an account creation tool
+There are several tools that create a storage account. You choice is typically based on if you want a GUI and whether you need automation.
+
+## Available tools
+- Azure Portal
+- Azure CLI
+- Azure PowerShell
+- Management client libraries
+
+<hr>
+
+## Knowledge check
+1. Suppose you have two video files stored as blobs. One of the videos is business-critical and requires a replication policy that creates multiple copies across geographically diverse datacenters. The other video is non-critical, and local replication policy is sufficient. Which of the following options would satisfy both data diversity and cost sensitivity consideration? -> Create two storage accounts. The first account makes use of Geo-redundant storage (GRS) and hosts the business-critical video content. The second accounts makes use of Local-redundant storage (LRS) and hosts the non-critical video content.
+2. The name of a storage account must be: -> Globally unique.
+3. In a typical project, when would you create your storage account(s)? -> At the beginning, during project setup.
+
+<hr>
+
+## Control access to Azure Storage with shared access signatures
+Grant access to data stored in your Azure Storage accounts securely through the use of shared access signatures.
+
+## Objectives
+- Identify the features of a shared access signature for Azure Storage.
+- Identify the features of stored access policies.
+- Programmatically generate and use a shared access signature to access storage.
+
+<hr>
+
+## Access Azure Storage
+Files stored in Azure Storage are accessed by clients over HTTP/HTTPS. Azure checks each client request for authorization to access stored data. Four options are available for blob storage:
+- Public access
+- Azure AD
+- Shared key
+- Shared access signature (SAS)
+
+## Public access
+Public access is also known as anonymous public read access for containers and blobs.
+
+There are two separate settings that affect public access:
+- **The Storage Account**: Configure the storage account to allow public access by setting the *AllowBlobPublicAccess* property. When set to true, Blob data is available for public access only if the container's public access setting is also set.
+- **The Container**: You can enable anonymous access only if anonymous access has been allowed for the storage account. A container has two possible settings for public access: *Public read access for blobs*, or *public read access for a container and its blobs*. Anonymous access is controlled at the container level, not for individual blobs. This means that if you want to secure some of the files, you need to put them in a separate container that doesn't permit public read access.
+
+Both storage account and container settings are required to enable anonymous public access. The advantages of this approach are that you don't need to share keys with clients who need access to your files. You also don't need to manage a SAS.
+
+## Azure AD
+Use the Azure AD option to securely access Azure Storage without storing any credentials in your code. AD authorization takes a two-step approach. First, you authenticate a security principal that returns an OAuth 2.0 token if successful. This token is then passed to Azure Storage to enable authorization to the requested resource.
+
+Use this form of authentication if you're running an app with managed identities or using security principals.
+
+## Shared key
+Azure Storage creates two 512-bit access keys for every storage account that's created. You share these keys to grant clients access to the storage account. These keys grant anyone with access to the equivalent of root access to your storage.
+
+We recommend that you manage storage keys with Azure Key Vault because it's easy to rotate keys on a regular schedule to keep your storage account secure.
+
+## Shared access signature
+A SAS lets you grant granular access to files in Azure Storage, such as read-only or read-write access, expiration time, after which the SAS no longer enables the client to access the chosen resources. A shared access signature is a key that grants permission to a storage resource, and should be protected in the same manner as an account key.
+
+Azure Storage supports three types of shared access signatures:
+- **User delegation SAS**: Can only be used for Blob storage and is secured with Azure AD credentials.
+- **Service SAS**: A service SAS is secured using a storage account key. A service SAS delegates access to a resource in any one of four Azure Storage services: Blob, Queue, Table, or File.
+- **Account SAS**: An account SAS is secured with a storage account key. An account SAS has the same controls as a service SAS, but can also control access to service-level operations, such as Get Service Stats.
+
+You can create a SAS ad-hoc by specifying all the options you need to control, including start time, expiration time, and permissions.
+
+If you plan to create a service SAS, there's also an option to associate it with a stored access policy. A stored access policy can be associated with up to five active SASs. You can control access and expiration at the stored access policy level. This is a good approach if you need to have granular control to change the expiration, or revoke a SAS. The only way to revoke or change an ad-hoc SAS is to change the storage account keys.
+
+## Check your knowledge
+1. Your organization has an internal system to share patient appointment information and notes. You can secure the access based on a user's membership in an Azure Active Directory (Azure AD) group. Which kind of authorization support this scenario best, and why? -> Use Azure Active Directory. By using Azure AD, you can create a service principal to authenticate your app.
+2. Your public-facing static websites stores all its public UI images in blob storage. The website needs to display the graphics without any kind of authorization. Which is the best option? -> Public access.
+
+<hr>
+
+## Use shared access signatures to delegate access to Azure Storage
+By using a shared access signature (SAS) you can delegate access to your resources. Clients don't have direct access to your storage account credentials and, at a granular level, you control what they access.
+
+## How shared access signatures work
+A SAS has two components, a URI that points to one or more storage resources, and a token that indicates how the resources may be accessed by the client.
+
+In a single URI, such as `https://medicalrecords.blob.core.windows.net/patient-images/patient-116139-nq8z7f.jpg?sp=r&st=2020-01-20T11:42:32Z&se=2020-01-20T19:42:32Z&spr=https&sv=2019-02-02&sr=b&sig=SrW1HZ5Nb6MbRzTbXCaPm%2BJiSEn15tC91Y4umMPwVZs%3D`, you can separate the UIR from the SAS token as follows:
+
+URI | SAS token
+--- | ---
+`https://medicalrecords.blob.core.windows.net/patient-images/patient-116139-nq8z7f.jpg?` | `sp=r&st=2020-01-20T11:42:32Z&se=2020-01-20T19:42:32Z&spr=https&sv=2019-02-02&sr=b&sig=SrW1HZ5Nb6MbRzTbXCaPm%2BJiSEn15tC91Y4umMPwVZs%3D`
+
+## Create a SAS in .NET
+The following steps show how to create a SAS in .NET that doesn't require Azure AD.
+
+## Create a blob container to connect to the storage account on Azure
+        BlobContainerClient container = new BlobContainerClient("ConnectionString", "Container");
+
+## Retrieve the blob you want to create a SAS token for and create a BlobClient
+        foreach (BlobItem blobItem in container.GetBlobs()) 
+        {
+                BlobClient bob = container.GetBlobClient(blobItem.Name);        
+        }
+
+## Create a BlobSasBuilder object for the blob you use to generate the SAS token
+        BlobSasBuilder sas = new BlobSasBuilder
+        {
+                BlobContainerName = blob.BlobContainerName,
+                BlobName = blob.Name,
+                Resource = "b",
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(1)
+        };
+
+        // Allow read access
+        sas.SetPermissions(BlobSasPermissions.Read);
+
+## Authenticate a call to the ToSasQueryParameters method of the BlobSasBuilder object
+        StorageSharedKeyCredential storageSharedKeyCredential = new StorageSharedKeyCredential( "AccountName", "AccountKey");
+
+        sasToken = sas.ToSasQueryParameters(storageSharedKeyCredential).ToString();
+
+## Best Practices
+- To securely distribute a SAS and prevent man-in-the-middle attacks, always use HTTPS.
+- The most secure SAS is user delegation. Use it wherever possible because it removes the need to store your storage account key in code. Azure AD must be used to manage credentials; this option might not be possible for your solution.
+- Try to set your expiration time to the smallest useful value. If a SAS key becomes compromised, it can be exploited for only a short time.
+- Apply the rule of minimum-required privileges. Only grant the access that's required. For example, in your app, read-only access is sufficient.
+- There are some situations where a SAS isn't the correct solution. When there's an unacceptable risk of using a SAS, create a middle-tier service to manage users and their access to storage.
+
+The most flexible and secure way to use a service or account SAS is to associate the sAS tokens with a stored access policy.
+
+<hr>
+
+## What are stored access policies?
+You can create a stored access policy on four kinds of storage resources:
+- Blob containers
+- File shares
+- Queues
+- Tables
+
+Teh stored access policy you create a blob container can be used for all the blobs in the container and or the container itself. A stored access policy is created with the following properties:
+- **Identifier**: The name you use to reference the stored access policy.
+- **Start time**: A DateTimeOffset value for the date and time when the policy might start to be used. The value can be null.
+- **Expiry time**: A DateTimeOffset value for the date and time when the policy expires. After this time, requests to the storage will fail with a 403 error-code message.
+- **Permissions**: the list of permissions as a string that can be one or all of **acdlrw**.
+
+## Create stored access policies
+You can create a stored access policy with C# code by using the Azure portal or Azure CLI commands.
+
+## With C# .NET code
+        BlobSignedIdentifier identifier = new BlobSignedIdentifier
+        {
+                Id = "stored access policy identifier",
+                AccessPolicy = new BlobAccessPolicy
+                {
+                        ExpiresOn = DateTimeOffset.UtcNow.AddHours(1),
+                        Permissions = "rw
+                }
+        };
+
+        blobContainer.SetAccessPolicy(permissions: new BlobSignedIdentifier[] { identifier });
+
+## With the portal
+In the portal, go to the storage account and then go to the blob storage container. On the left, select **Access policy**. To add a new stored access policy, select **+ Add policy**.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/control-access-to-azure-storage-with-sas/media/5-add-a-policy.png">
+
+## With Azure CLI commands
+        az storage container policy create \
+                --name <stored access policy identifier> \
+                --container-name <container name> \
+                --start <start time UTC datetime> \
+                --expiry <expiry time UTC datetime> \
+                --permissions <(a)dd, (c)reate, (d)elete, (l)ist, (r)ead, or (w)rite> \
+                --account-key <storage account key> \
+                --account-name <storage account name> \
+
+<hr>
+
+## Upload, download, and manage data in Azure Storage Explorer
+Azure Storage Explorer allows you to quickly view all the storage services under your account. You can browse through, read, and edit data stored in those services through a user-friendly graphical interface.
+
+## Objectives
+- Describe the features on Azure Storage Explorer
+- Install Storage Explorer
+- Use Storage Explorer to connect to Azure Storage services and manipulate stored data
+
+## Connect Azure Storage Explorer to a storage account
+Storage accounts provide a flexible solution that keeps data as files, tables, and messages. With Azure Storage Explorer, it's easy to read and manipulate this data.
+
+## What is Storage Explorer?
+Storage Explorer is a GUI application developed by Microsoft to simplify access to, and the management of, data stored in azure storage accounts. Storage Explorer is available on Windows, macOS, and Linux.
+
+Some of the benefits of using Storage Explorer are:
+- It's easy to connect to and manage multiple storage accounts.
+- The interface lets you connect to Data Lake Storage.
+- You can also use the interface to update and view entities in your storage accounts.
+- Storage Explorer is free to download and use.
+
+With Storage Explorer, you can use a range of storage and data operation tasks on any of your Azure storage accounts. These tasks include edit, download, copy, and delete.
+
+## Azure Storage types
+- **Azure Blob Storage**
+- **Azure Table Storage**
+- **Azure Queue Storage**
+- **Azure Files**
+- **Azure Data Lake Storage**: Azure Data Lake, based on Apache Hadoop, is designed for large data volumes and can store unstructured and structured data. Azure Data Lake Storage Gen1 is a dedicated service. Azure Data Lake Storage Gen2 is Azure Blob Storage with the hierarchical namespace feature enabled on the account.
+
+## Manage multiple storage accounts in multiple subscriptions
+Storage Explorer gives you the ability to manage the data stored in multiple Azure storage accounts and across Azure subscriptions.
+
+## Use local emulators
+Storage Explorer supports two emulators: Azure Storage Emulator and Azurite.
+- Azure Storage Emulator uses a local instance of Microsoft SQL Server 2012 Express LocalDB. It emulates Azure Table, Queue, and Blob storage.
+- Azurite, which is based on Node.js, is an open-source emulator that supports most Azure Storage commands through an API.
+
+## Connecting Storage Explorer to Azure
+There are several ways to connect your Storage Explorer application to your Azure storage accounts.
+
+You need two permissions to access your Azure storage account: management and data. However, you can use Storage Explorer with the data-layer permission. The data layer requires the user to be granted, at a minimum, a read data role. The natures of the read/write role should be specific to the type of data stored in the storage account. The data layer is used to access blobs, containers, and other data resources.
+
+## Connection types
+There are many ways to connect an Azure Storage Explorer instance to your Azure resources. For example:
+- Add resources by using Azure AD
+- Use a connection string
+- Use a shared access signature URI
+- Use a name and key
+- Attach to a local emulator
+- Attach to Azure Data Lake Storage by using a URI
+
+## Add an Azure account by using Azure AD
+Use this connection type when the user can access the data layer. You can use it only to create an Azure Data Lake blob container or a standard blob container. Connecting to Azure Storage through Azure AD requires more configuration than the other methods. The account that you use to connect to Azure must have the correct permissions and authorization to access the target resources.
+
+## Connect by using a shared access signature URI
+You'll need a SAS URI whether you want to use a file share, table, queue, or blob container. You can get a SAS URI either form the Azure portal or from Storage Explorer.
+
+## Connect by using a storage account name and key
+To find the storage access keys from the Azure portal, go the correct storage account page and select **access keys**.
+
+## Manage Data Lake Storage Gen1
+You can use Storage Explorer to access and manage data stored in Data Lake Storage Gen1.
+
+<hr>
+
+## Configure storage accounts
+You will learn to configure storage accounts including replication and endpoints.
+
+## Configure a custom domain
+There are two ways to configure this service: Direct CNAME mapping and an intermediary domain.
+
+Note: Azure Storage does not yet natively support HTTPS with custom domains. You can currently use Azure CDN to access blobs by using custom domains over HTTPS.
+
+## Secure storage endpoints
+For accessing a storage account, you would use the **Firewalls and virtual networks** blade to add the virtual networks tha will have access. 
+
+- Firewalls and Virtual Networks restricts access to the Storage Account from specific Subnets on Virtual Networks or public IPs.
+- Subnets and Virtual Networks must exist in the same Azure Region or Region Pair as the Storage Account.
+
+<hr>
+
+## Knowledge check
+1. Which of the following replicates data to a secondary region, maintains six copies of the data, and is the default replication option? -> Read-access geo-redundant storage.
+2. The name of a storage account must be which of the following? -> Globally unique.
+3. A manufacturing company has sensors that record time-relative data. Only the most recent data is useful. The company wants the lowest cost storage for this data. What is the best storage account for the company? -> Locally redundant storage.
+
+<hr>
+
+## Configure virtual machine availability
+You will learn how to configure virtual machine availability including vertical and horizontal scaling.
+
+## Objectives
+- Implement availability sets and availability zones.
+- Implement update and fault domains.
+- Implement virtual machine scale sets.
+- Autoscale virtual machines.
+
+<hr>
+
+## Plan for maintenance and downtime
+Three scenarios can lead to your VM being impacted:
+1. Unplanned hardware maintenance
+2. Unexpected downtime
+3. Planned maintenance
+
+<hr>
+
+## Setup availability sets
+An **Availability Set** is a logical feature used to ensure that a group of related VMs are deployed so that they aren't all subject to a single point of failure and not all upgraded at the same time during a host operating system upgrade in the datacenter. VMs place in an availability set should perform an identical set of functionalities and have the same software installed.
+
+Keep these general principals in mind.
+
+- For redundancy, configure multiple VMs in an Availability Set.
+- Configure each application tier into separate Availability Sets.
+- Combine a Load Balancer with Availability Sets.
+- Use managed disks with the virtual machines.
+
+You create Availability Sets through the Azure portal in the disaster recovery section. Also, you can build Availability Sets using Resource Manager templates, scripting, or API tools.
+
+## Service Level Agreements (SLAs)
+- For all VMs that have two or more instances deployed across two or more Availability Zones in the same Azure region, Microsoft guarantees you will have VM connectivity to at least one instance at least 99.99% of the time.
+- For all VMs that have two or more instances deployed in the same Availability SEt, you will have connectivity to at least one instance at least 99.95% of the time.
+- For any Single Instance Virtual Machine using premium storage for all Operating System Disks and Data Disks, Microsoft guarantees VM connectivity at least 99.9%.
+
+<hr>
+
+## Review update and fault domains
+Update Domains and Fault Domains help Azure maintain high availability and fault tolerance when deploying and upgrading applications. Each virtual machine in an availability set is placed in one update domain and one fault domain.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-machine-availability/media/update-fault-domains-c1ceee00.png">
+
+## Update domains
+An **update domain (UD)** is a group of nodes that are upgraded together during the process of a service upgrade (rollout). An update domain allows Azure to perform incremental or rolling upgrades across a deployment. Each update domain contains a set of VMs and associated physical hardware that can be updated and rebooted at the same time. During planned maintenance, only one update domain is rebooted at a time. By default, there are five (non-user-configurable) update domains, but you configure up to 20 update domains.
+
+## Fault domains
+A **fault domain (FD)** is a group of nodes that represent a physical unit of failure. A fault domain defines a group of virtual machines that share a common set of hardware, switches, that share a single point of failure. Two fault domains mitigate against hardware failures, network outages, power interruptions, or software updates. Think of a fault domain as nodes belonging to the same physical rack.
+
+<hr>
+
+## Review availability zones
+Availability Zones is a high-availability offering that protects your applications and ata from datacenter failures.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-machine-availability/media/availability-zones-26abc45c.png">
+
+## Considerations
+- Availability Zones are unique physical locations within an Azure region.
+- Each zone is made up of one or more datacenters equipped with independent power, cooling, and networking.
+- To ensure resiliency, there's a minimum of three separate zones in all enabled regions.
+- The physical separation of Availability Zones within a region protects applications and data from datacenter failures.
+- Zone-redundant services replicate your applications and data across Availability Zones to protect from single-points-of-failure.
+- With Availability Zones, Azure offers industry best 99.99% VM update SLA.
+
+## Implementation
+An Availability Zone in an Azure region is a combination of fault domain and an update domain. For example, if you create three or more VMs across three zones in an Azure region, your VMs are effectively distributed across three fault domains and three update domains. The Azure platform recognizes this distribution across update domains to make sure that VMs in different zones are not updated at the same time. Build high-availability into your application architecture by colocating your compute, storage, networking, and data resources within a zone and replicating in other zones.
+
+Azure services that support Availability Zones fall into two categories:
+- **Zonal services**: Pins the resource to a specific zone (for example, virtual machines, managed disks, Standard IP addresses).
+- **Zone-redundant services**: Platform replicates automatically across zones (for example, zone-redundant storage, SQL Database).
+
+Note: To achieve comprehensive business continuity on Azure, build your application architecture using the combination of Availability Zones with Azure region pairs.
+
+## Implement scale sets
+VM scale sets are an Azure Compute resource you can use to deploy and manage a set of **identical** VMs. With all VMs configured the same, VM scale sets are designed to support true autoscale. No pre-provisioning of VMs is required. It is easier to build large-scale services targeting big computer, big data, and containerized workloads. As demand goes up more VM instances can be added. As demand goes down VM instances can be removed. The process can be manual or automated or a combination of both.
+
+## Scale set benefits
+- All VM instances are created from the same base OS image and config. This approach lets you easily manage hundreds of VMs without additional configuration tasks or network management.
+- Scale sets support the use of the Azure load balancer for basic layer-4 traffic distribution, and Azure Application Gateway for more advanced layer-7 traffic distribution and SSL termination.
+- Used to run multiple instances of your application. If one of these VM instances has a problem, customers continue to access your application through one of the other instances with minimal interruption.
+- Supports up to 1,000 VM instances. If you create and upload your own custom VM images, the limit is 600 VM instances.
+
+## Create scale sets
+When you create a scale set, consider these parameters.
+- **Initial instance count**
+- **Instance size**
+- **Azure spot instance**: Low-priority VMs are allocated from Azure's excess compute capacity. Spot instances enable sereral types of workloads to run at a reduced cost.
+- **Enable scaling beyond 100 instances**: If set to No, the scale set will be limited to one placement group with a max capacity of 100. If yest, the scale set can span multiple placement groups. This allows for capacity to be up to 1,000 but changes the availability characteristics of the scale set.
+- **Spreading algorithm**: We recommend deploying with max spreading for most workloads. This approach provides the best spreading.
+
+<hr>
+
+## Implement autoscale
+An Azure VM scale set can automatically increase or decrease the number of VM instances that run your application. This means you can dynamically scale to meet changing demand.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-machine-availability/media/autoscale-45b054e0.png">
+
+## Autoscale benefits
+- **Automatically adjust capacity**: Lets your create rules for when to scale and by how much.
+- **Scale out**
+- **Scale in**
+- **Schedule events**
+- **Less overhead**
+
+## Configure autoscale
+When you create a scale set you can enable Autoscale. You should also define a minimum, maximum, and default number of VM instances.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-machine-availability/media/implement-autoscale-74d25345.png">
+
+<hr>
+
+## Knowledge check
+1. Another admin creates an Azure VM scale set with 5 VMs. Later, alerts who the VMs are all running at max capacity with the CPU being fully consumed. However, more VMs are not deploying in the scale set. What does be done to ensure additional VMs are deployed with the CPU is 75% consumed? -> Enable auto scale option.
+2. The DevOps team for a large food delivery company is configuring a VM scale set. Friday night is typically the busiest time. Conversely, 7 AM on Wednesday is generally the quietest time. Which of the following VM scale set features should be configured to add more machines during that time? -> Schedule-based rules.
+3. VM scale sets deploy and manage what? -> A set of identical VM instances created from the same base OS image and configuration.
+
+<hr>
+
+## Configure VM extensions
+You will learn how to use VM extensions to automate virtual machine deployments.
+
+## Objectives
+- Identify features and usage cases for machine extensions
+- Identify features and usage cases for custom script extensions
+- Identify features and usage cases for desired state configuration
+
+<hr>
+
+## Implement VM extensions
+A VM **extension** is used to automate tasks like creating, maintaining, and removing VMs. They are small applications that provide post-deployment configuration and automation tasks on Azure VMs. For example, if a VM requires software installation, anti-virus protection, or a configuration script inside, a VM extension can be used. Extensions are all about managing your VMs.
+
+Azure VM extensions can be:
+- Managed with Azure CLI, PowerShell, ARM templates, and the Azure portal.
+- Bundled with a new VM deployment or run against any existing system. For example, they can be part of a larger deployment, configuring applications on VM provision, or run against any supported extension OS post deployment.
+
+<hr>
+
+## Implement custom script extensions
+A Customer Script Extension (CSE) can be used to automatically launch and execute VM customization tasks post configuration. Your script extension may perform simple tasks such as stopping the VM or installing a software component.
+
+You can install the CSE form the Azure portal by accessing the VM's **Extensions** blade. Once the CSE resource is created, you will provide a PowerShell script file. The file will include PowerShell commands you want to execute on the VM. You can also pass arguments. After the file is uploaded it executes immediately. Scripts can be downloaded from Azure storage on GitHub, or provided to the Azure portal at extension run time.
+
+You could also use the PowerShell **Set-AzVmCustomScriptExtension** command. This command requires the URI for the script in the blob container:
+
+        Set-AzVmCustomScriptExtension -FileUri https://scriptstore.blob.core.windows.net/scripts/Install_IIS.ps1 -Run "PowerShell.exe" -VmName vmName -ResourceGroupName resourceGroup -Location "location"
+
+## Considerations
+- **Timeout**: CSEs have 90 minutes to run. If that is exceeded, it is marked as a timeout.
+- **Dependencies**: Make sure all required content is available (network or storage access).
+- **Failure events**: Be sure to account for any errors that might occur when running your script (disk space, security, permissions).
+- **Sensitive data**: Protect any sensitive data.
+
+<hr>
+
+## Implement desired state configuration
+Desired State Configuration (DSC) is a management platform in Windows PowerShell. DSC enables deploying and managing configuration data for software services and managing the environment in which these services run. DSC provides a set of Windows PowerShell language extensions, cmdlets, and resources that you can use to declaratively specify how you want your software environment to be configured. DSC also provides a means to maintain and manage existing configurations.
+
+DSC centers around creating *configurations*. A configuration is an easy-to-read script that describes an environment made up of computers (nodes) with specific characteristics. These characteristics can be as simple as ensuring a specific Windows feature is enabled or as complex as deploying SharePoint. Use DSC when the CSE will not work for your application.
+
+In this example, we are installing IIS on the localhost. The configuration is saved as a PS1 file.
+
+        configuration IISInstall
+        {
+                Node “localhost”
+                {
+                        WindowsFeature IIS
+                        {
+                                Ensure = “Present”
+                                Name = “Web-Server”
+                }       } 
+        }
+
+The DSC script consists of a Configuration block, Node block, and one or more resource blocks.
+
+- The **Configuration** block is the outermost script block. You define it by using the **Configuration** keyword and providing a name. 
+- **Node** blocks define the computers or VMs that you are configuring. In the example, there is one Node block that targets a computer named 'localhost'.
+- One ore more resource blocks. **Resource** blocks configure the resource properties. In this example, there is one resource block that uses **WindowsFeature**. WindowsFeature indicates the name (Web-Server) of the role or feature that you want to ensure is added or removed. Ensure indicates if the role or features is added. Your choices are Present and Absent.
+
+<hr>
+
+## Knowledge check
+1. What is a small application that provides post-deployment configuration and automation tasks on Azure VMs? -> VM extensions.
+2. Custom script extensions time out after how long? -> 90 minutes.
+3. The infrastructure team needs to install IIS on the localhost. They do not want to use a Custom Script Extension. Which of the following could be used instead? -> Desired State Configuration (DSC).
+
+<hr>
+
+## Configure app service plans
+You will learn how to configure the App Service Plan including pricing and scaling.
+
+## Objectives
+- Identify features and usage cases of the Azure App Service.
+- Select an appropriate Azure App Service plan pricing tier.
+- Scale the App Service Plan.
+- Scale out the App Service Plan.
+
+<hr>
+
+## Implement Azure app service plans
+In App Service, an app runs in an App Service plan. An App Service plan defines a set of compute resources for a web app to run. These compute resources are analogous to the server farm in conventional web hosting. One or more apps can be configured to run on the same computing resources (or in the same App Service plan).
+
+When you create an App Service plan in a certain region (for example, West Europe), a set of compute resources is created for that plan in that region. Whatever apps you put into this App Service plan run on these compute resources as defined by our App Service plan. Each App Service plan defines:
+
+- **Region** (West US, East US, etc.)
+- **Number of VM instances**
+- **Size of VM instances** (Small, Medium, Large)
+
+## How the app runs and scales
+In the Free and Shared tiers, an app receives CPU minutes on a shared VM instance and cannot scale out. In other tiers, an app runs and scales as follows.
+
+When you create an app in App Service, it is put into an App Service plan. When the app runs, it runs on all the VM instances configured in the App Service plan. If multiple apps are in the same App Service plan, they all share the same VM instances. If you have multiple deployment slots for an app, all deployment slots also run on the same VM instances. If you enable diagnostic logs, perform backups, or run WebJobs, they also use CPU cycles and memory on these VM instances.
+
+The App Service plan is the scale unit of the App Service apps. If the plan is configured to run five VM instances, then all apps in the plan run on all five instances. If the plan is configured for autoscaling, then all apps in the plan are scaled out together based on the autoscale settings.
+
+## Considerations
+You can potentially save money by putting multiple apps into one App Service plan. You can continue to add apps to an existing plan as long as the plan has enough resources to handle the load. However, keep in mind that apps in the same App Service plan all share the same compute resources. To determine whether the new app has the necessary resources, you need to understand the capacity of the existing App Service plan, and the expected load for the new app. Overloading an App Service plan can potentially cause downtime for your new and existing apps. Isolate your app into a new App Service plan when:
+- The app is resource-intensive
+- You want to scale the app independently from the other apps in the existing plan
+- The app needs resources in a different geographical region.
+
+<hr>
+
+## Determine app service plan pricing
+The pricing tier of an App Service plan determines what App Service features you get and how much you pay for the plan.
+
+- **Free and Shared**: Basic tiers that run on the same VMs as other apps. Some apps may belong to other customers. These tiers are intended to be used only for development and testing purposes. There is no SLA provided for these service plans, and are metered on a per App basis.
+- **Basic**: Designed for apps that have lower traffic requirements, and don't need advanced auto scale and traffic management features. Pricing is based on the size and number of instances you run. Built-in network load-balancing support automatically distributes traffic across instances. This service plan with Linux runtime environments supports Web App for Containers.
+- **Standard**: Designed for running production workloads. Has built-in network load-balancing support and auto scaling. If on Linux then also supports Web App for Containers.
+- **Premium**: Designed to provide enhanced performance for production apps. The upgraded Premium plan, Premium v2, features Dv2-series VMs with faster processors, SSD storage, and double memory-to-core ratio compared to standard. The first generation of premium is still available to existing customers' scaling needs.
+- **Isolated**: Designed to run mission critical workloads that are required to run in a virtual network. The private environment used with an Isolated plan is called the App Service Environment. The plan can scale to 100 instances with more available upon request.
+
+<hr>
+
+## Changing your App Service plan (scale up)
+Your App Service plan can be scaled up or down at any time by changing the pricing tier.
+
+## Other considerations
+- The scale settings take only seconds to apply and affect all apps in your App Service plan. They don't require you to change your code or redeploy your application.
+- If your app depends on other services, such as Azure SQL Database or Azure Storage, you can scale up these resources separately. These resources aren't managed by the App Service plan.
+
+<hr>
+
+## Configure app service plan scaling
+
+## Autoscale settings
+An autoscale setting is read by the autoscale engine to determine whether to scale out or in. Autoscale settings are grouped into profiles.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-app-service-plans/media/web-app-autoscale-94c4da54.png">
+
+Rules include a trigger and a scale action (in or out). The trigger can be metric-based or time-based.
+- **Metric-based**: Measure application load and add or remove. For example, do this action when CPU usage is above 50%. Examples of metrics are CPU time, Average response time, and Requests.
+- **Time-based**: (schedule based) rules allow you to scale when you see time patterns in your load and want to scale before a possible load increase or decrease occurs. For example, trigger a webhook every 8am on Saturday in a given time zone.
+
+## Considerations
+- Having a minimum instance count makes sure your application is always running even under no load.
+- Having a maximum instance count limits your total possible hourly cost.
+- You can automatically scale between the minimum and maximum using rules you create.
+- Ensure the max and min values are different and have an adequate margin between them.
+- Always use a scale-out and scale-in rule combination that performs and increase and decrease.
+- Choose the appropriate statistic for your diagnostics metric (Average, Minimum, Maximum, Total).
+- Always select a safe default instance count. The default instance count is important because autoscale scales your service to that count when metrics are not available.
+- Always configure autoscale notifications
+
+## Notification settings
+A notification setting defines what notifications should occur when an autoscale event occurs based on satisfying the criteria of one of the autoscale setting's profiles. Autoscale can notify one or more email addresses or make calls to one or more webhooks.
+
+<hr>
+
+## Knowledge check
+1. The infrastructure team is responsible for managing a production web app. The app requires scaling to 5 instances and 100 GB of disk storage. The most cost efficient solution is desired. Which App Service Plan would meet the requirements. -> Premium.
+2. What provides more CPU, memory, or disk space without adding more virtual machines? -> Scale up.
+3. Triggering a webhook at 8am on Saturday is an example of which of the following? -> A time-based rule.
+
+<hr>
+
+## Configure Azure App Services
+You'll learn how to configure and monitor the Azure App Service including deployment slots.
+
+## Objectives
+- Identify features and usage cases for the Azure App Service.
+- Create an App Service.
+- Configure deployment settings, specifically deployment slots.
+- Secure the App Service.
+- Configure custom domain names.
+- Backup the App Service.
+- Configure Application Insights.
