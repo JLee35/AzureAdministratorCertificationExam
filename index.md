@@ -2966,3 +2966,102 @@ You'll learn how to configure and monitor the Azure App Service including deploy
 - Configure custom domain names.
 - Backup the App Service.
 - Configure Application Insights.
+
+<hr>
+
+## Create an app service
+When creating an App Service, you will need to specify a resource group and service plan. Then there are few other configuration choices.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-app-services/media/web-instances-feb0bc48.png">
+
+- **Name**: Must be unique and will be used to locate your app. For example, webappces1.azurewebsites.net. You can map a custom domain name, if you prefer to use that instead.
+- **Publish**: The app service can host either Code or a Docker Container.
+- **Runtime stack**: The software stack to run the app, including the language and SDK versions. For Linux apps and custom container apps, you can also set an optional start-up command or file. Choices include: .NET Core, .NET Framework, Node.js, PHP, Python, and Ruby. Various versions of each are available.
+- **Operating system**: Choices are Linux and Windows.
+- **Region**: Your choice will affect app service plan availability.
+
+## Application settings
+Once your app service is created, additional configuration information is available.
+
+Certain configuration settings can be included in the developer's code or configured in the app service. Here are a few interesting settings.
+- **Always On**: Keep the app loaded even when there's no traffic. It's required for continuous WebJobs or for WebJobs that are triggered using a CRON expression.
+- **ARR affinity**: In a multi-instance deployment, ensure that the client is routed to the same instance for the life of the session.
+- **Connection strings**: Encrypted at rest and transmitted over an encrypted channel.
+
+<hr>
+
+## Create deployment slots
+When deploy your web app, web app on Linux, mobile back end, or API app to Azure App Service, you can use a separate deployment slot instead of default production slot when you're running in the **Standard**, **Premium**, or **Isolated** App Service plan tier. Deployment slots are live apps with their own hostnames. App content and configurations element can be swapped between two deployment slots, including the production slot.
+
+## Deployment slot advantages
+- You can validate app changes in a staging deployment slot before swapping it with the production slot.
+- Deploying an app to a slot first and swapping it into production ensures that all instances of the slot are warmed up before being swapped into production. This eliminates downtime when you deploy your app. The traffic redirection is seamless, and no requests are dropped because of swap operations. This entire workflow can be automated by configuring Auto Swap when pre-swap validation is needed.
+- After a swap, the slot with previously staged app now has the previous production app. If the changes swapped into the production slot are not as you expected, you can perform the same swap immediately to get your "last know good site" back.
+
+Auto swap streamlines Azure DevOps scenarios where you want to deploy your app continuously with zero cold starts and zero downtime for customers of the app. When auto swap is enabled from a slot into production, every time you push your code changes to that slot, App Service automatically swaps the app into production after it's warmed up into the source slot. Auto swap isn't current supported in we apps on Linux.
+
+Note: Each App Service plan mode supports a different number of deployment slots.
+
+<hr>
+
+## Add deployment slots
+New deployment slots can be empty or cloned. When you clone a configuration from another deployment slot, the cloned configuration is editable. Some configuration elements follow the content across a swap (not slot specific), whereas other configuration elements stay in the same slot after a swap (slot specific). Deployment slot settings fall into three categories.
+
+- Slot-specific app settings and connection strings, if applicable.
+- Continuous deployment settings, if enabled.
+- App Service authentication settings, if enabled.
+
+**Settings that are swapped:**
+- General settings, such as framework version, 32/64-bit, web sockets
+- App settings (can be configured to stick to a slot)
+- Connection strings (can be configured to stick to a slot)
+- Handler mappings
+- Public certificates
+- WebJobs content
+- Hybrid connections *
+- Service endpoints *
+- Azure Content Delivery Network *
+
+Features marked with an asterisk (*) are planned to be unswapped.
+
+**Settings that aren't swapped:**
+- Publishing endpoints
+- Custom domain names
+- Non-public certificates and TLS/SSL setting
+- Scale settings
+- WebJobs schedulers
+- IP restrictions
+- Always On
+- Diagnostic settings
+- Cross-origin resource sharing (CORS)
+- Virtual network integration
+
+<hr>
+
+## Secure an app service
+Azure App Service provides built-in authentication and authorization support, so you can sign in users and access data by writing minimal or no code in your web app, API, or mobile back end, and also Azure Functions.
+
+Secure authentication and authorization requires deep understanding of security, including federation, encryption, JSON web tokens (JWT) management, grant types, and so on, App Service provides these utilities so that you can spend more time and energy on providing business value to you customer.
+
+Note: You're not required to use App Service for authentication and authorization. many web frameworks are bundled with security features, and you can use them if you like.
+
+## How it works
+The authentication and authorization module runs in the same sandbox as your application code. When it's enabled, every incoming HTTP request passes through it before being handled by your application code. This module handles several things for your app:
+
+- Authenticates users with the specified provider.
+- Validates, stores, and refreshes tokens.
+- Manages the authenticated session. 
+- Injects identity information into request headers.
+
+The module runs separately from your application code and is configured using app settings. No SDKs, specific languages, or changes to your application code are required.
+
+## Configuration settings
+In the Azure portal, you can configure App Service with a number of behaviors:
+
+1. **Allow Anonymous requests (no action)**: This option defers authorization of unauthenticated traffic to your application code.  For authenticated requests, App Service also passes along authentication information in the HTTP headers. The option provides more flexibility in handling anonymous requests. It lets you present multiple sign-in providers to your users.
+2. **Allow only authenticated requests**: The option is **Log in with <provider>**. App Service redirects all anonymous requests to `/.auth/login/<provider>` for the provider you choose. If the anonymous request comes from a native mobile app, the returned response is an `HTTP 401 Unauthorized`. With this option, you don't need to write any authentication code in your app.
+
+Note: Restricting access in this way applies to all calls in your app, which may not be desirable for apps wanting a publicly available home page, as in many single-page applications.
+
+## Logging and tracing
+If you enable application logging, you will see authentication and authorization traces directly in your log files. If you see an authentication error that you didn't expect, you can conveniently find all the details by looking in your existing application logs. If you enabled failed request tracing, you can see exactly what role the authentication and authorization module may have played in a failed request. in the trace logs, look for references to a module named `EastAuthModule_32/64`.
