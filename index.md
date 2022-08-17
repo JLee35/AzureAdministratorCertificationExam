@@ -3128,3 +3128,110 @@ Application Insights is aimed at the development team, to help you understand ho
 1. When cloning a configuration from another deployment slot, which configuration setting follows the content across the swap? -> Connection strings
 2. The marketing team wants to know which web pages are most popular, at what times of day, and where the users are located. Which of the following should be recommended? -> Application Insights
 3. Which of the following is a valid automated deployment source? GitHub
+
+<hr>
+
+## Configure Azure Container Instances
+You will learn how to configure Azure Container Instances including container groups.
+
+## Objectives
+- Identify when to use containers versus virtual machines.
+- Identify the features and usage cases of Azure Container Instances.
+- Implement Azure Container Groups.
+
+<hr>
+
+## Compare containers to virtual machines
+Containers represent the next stage in the virtualization of computing resources. Container-based virtualization allows you to virtualize the operating system. This way, you can run multiple applications within the same instance of an operating system, while maintaining isolation between the applications. This means that containers within a VM provide functionality similar to that of VMs within a physical server.
+
+**Feature** | **Containers** | **Virtual Machines**
+----------- | -------------- | --------------------
+Isolation | Typically provides lightweight isolation from the host and other containers but doesn't provide as strong a security boundary as a virtual machine. | Provides complete isolation from the host operating system and other VMs. This is useful when a strong security boundary is critical, such as hosting apps from competing companies on the same server or cluster.
+Operating system | Runs the user mode portion of an operating system and can be tailored to contain just the needed services for your app, using fewer system resources. | Runs a complete operating system including the kernel, thus requiring more system resources (CPU, memory, and storage).
+Deployment | Deploy individual containers by using Docker via command line; deploy multiple containers using an orchestrator such as Azure Kubernetes Service. | Deploy individual VMs by using Windows Admin Center or Hyper-V Manager; deploy multiple VMs by using PowerShell or System Center Virtual Machine Manager.
+Persistent storage | Use Azure Disks for local storage for a single node, or Azure Files (SMB shares) for storage shared by multiple nodes or servers. | Use a virtual hard disk (VHD) for local storage for a single VM, or an SMB file share for storage shared by multiple servers.
+Fault tolerance | If a cluster node fails, any containers running on it are rapidly recreated by the orchestrator on another cluster node. | VMs can fail over to another server in a cluster, with the VM's operating system restarting on the new server.
+
+## Container advantages
+Containers offer several advantages over physical and virtual machines, including:
+- Increased flexibility and speed when developing and sharing the application code.
+- Simplified application testing.
+- Streamlined and accelerated application development.
+- Higher workload density, resulting in improved resource utilization.
+
+<hr>
+
+## Review Azure container instances
+Containers are becoming the preferred way to package, deploy, and manage cloud applications. Azure Container Instances offers the fastest and simplest way to run a container in Azure, without having to manage any virtual machines and without having to adopt a higher-level service. Azure Container Instances is a great solution for any scenario that can operate in isolated containers, including simple applications, task automation, and build jobs.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-container-instances/media/container-overview-0e72c2ba.png">
+
+**Feature** | **Description**
+----------- | ---------------
+Fast Startup Times | Containers can start in seconds without the need to provision and manage virtual machines.
+Public IP Connectivity and DNS Names | Containers can be directly exposed to the internet with an IP address and FQDN
+Hypervisor-level Security | Container applications are as isolated in a container as they could be in a virtual machine
+Custom Sizes | Container nodes can be scaled dynamically to match actual resource demands for an application.
+Persistent Storage | Containers support direct mounting of Azure File Shares.
+Linux and Windows Containers | Container instances can schedule both Windows and Linux containers. Simply specify the OS type when you create your container groups.
+Coscheduled Groups | Container instances supports scheduling of multi-container groups that share host machine resources.
+Virtual Network Deployment | Container instances can be deployed into an Azure virtual network.
+
+<hr>
+
+## Implement container groups
+The top-level resource in Azure Container Instances is the container group. A container group is a collection of containers that get scheduled on the same host machine. The containers in a container group share a lifecycle, resources, local network, and storage volumes. It's similar in concept to a pod in Kubernetes.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-container-instances/media/container-groups-ea19ee6b.png">
+
+An example container group:
+- Is scheduled on a single host machine.
+- Is assigned a DNS name label.
+- Exposes a single public IP address, with one exposed port.
+- Consists of two containers. One container listens on port 80, while the other listens on port 1433.
+- Includes two Azure file shares as volume mounts, and each container mounts one of the shares locally.
+
+## Deployment options
+Here are two common ways to deploy a multi-container group: use a Resource Manager template or a YAML file. A Resource Manager template is recommended when you need to deploy additional Azure service resources (for example, an Azure Files share) when you deploy the container instances. Due to the YAML format's more concise nature, a YAML file is recommended when your deployment includes only container instances.
+
+## Resource allocation
+Container groups can share an external-facing IP address, one or more ports on that IP address, and a DNS label with a fully qualified domain name (FQDN). To enable external clients to reach a container within your group, you must expose the port on the IP address and from the container. Because containers within the group share a port namespace, port mapping isn't supported. A container group's IP address and FQDN will be released when the container group is deleted.
+
+## Common scenarios
+Multi-container groups are useful in cases where you want to divide a single function task into a small number of container images. These images can then be delivered by different teams and have separate resource requirements. Example usage could include:
+- A container serving a web application and a container pulling the latest content from source control.
+- An application container and a logging container. The logging container collects the logs and metrics output by the main application and writes them to a long-term storage.
+- An application container and a monitoring container. The monitoring container periodically makes a request to the application to ensure that it's running and responding correctly, and raises an alert if it's not.
+- A front-end container and a back-end container. The front end might serve a web application, with the back end running a service to retrieve data.
+
+<hr>
+
+## Review the docker platform
+Docker is a platform that enables developers to host applications within a container.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-container-instances/media/docker-c787c4b8.png">
+
+A container is essentially a standalone package that contains everything that is needed to execute a piece of software. The package includes:
+
+- The application executable code.
+- The runtime environment (such as .NET Core).
+- System tools.
+- Settings.
+
+The Docker platform is available on both Linux and Windows and can be hosted on Azure. The key thing that Docker provides is the guarantee that the containerized software will always run the same. It doesn't matter if the code is run locally on Windows, Linux or in the cloud on Azure. The software can be developed locally within a Docker container, shared with QA resources for testing, and then deployed to production in the Azure Cloud. Once deployed, the application can easily be scaled using the Azure Container Instances (ACI).
+
+## Docker terminology
+You should be familiar with the following key terms before using Docker and Container Instances to create, build, and test containers:
+
+- **Container**: An instance of a Docker image. It represents the execution of a single application, process, or service. It consists of the contents of a Docker image, an execution environment, and a standard set of instructions. When scaling a service, you create multiple containers from the same image, passing different parameters to each instance.
+- **Container image**: Refers to a package with all the dependencies and information required to create a container. The dependencies include frameworks and the deployment and execution configuration that a container runtime uses. Usually, an image derives from multiple base images that are layers stacked on top of each other to form the container's file system. An image is immutable once it has been created.
+- **Build**: Refers to the action of building a container image based on the information and context provided by the Docker file. The build also includes any other files that are needed. You build images by using the `docker build` command.
+- **Pull**: Refers to the process of downloading a container image from a container registry.
+- **Push**: Refers to the process of uploading a container image to a container registry.
+- **Dockerfile**: Refers to a text file that contains instructions on how to build a Docker image. The Dockerfile is like a batch script. The first line identifies the base image. The rest of the file includes the build actions.
+
+<hr>
+
+## Knowledge check
+1. What is a reason to select VMs or containers? -> VMs provide complete isolation from the host operating system and other VMs.
+2. What is a feature of Azure Container Instances? -> Billing occurs when the container is in use.
