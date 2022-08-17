@@ -3065,3 +3065,66 @@ Note: Restricting access in this way applies to all calls in your app, which may
 
 ## Logging and tracing
 If you enable application logging, you will see authentication and authorization traces directly in your log files. If you see an authentication error that you didn't expect, you can conveniently find all the details by looking in your existing application logs. If you enabled failed request tracing, you can see exactly what role the authentication and authorization module may have played in a failed request. in the trace logs, look for references to a module named `EastAuthModule_32/64`.
+
+<hr>
+
+## Create custom domain names
+When you create a web app, Azure assigns it to a subdomain of azurewebsites.net. Azure also assigns a virtual IP address.
+
+## Configuration steps
+1. **Reserve your domain name**: If you haven't already registered for an external domain name already, the easiest way to set up a custom domain is to buy  one directly in the Azure portal. If you do not use the portal, you can sue any domain registrar.
+2. **Create DNS records that map the domain to your Azure web app**: The Domain Name System (DNS) uses data records to map domain names into IP addresses. There are several types of DNS records. For web apps, you'll create either an A record or a CNAME record. If the IP address changes, a CNAME entry is still valid, whereas an A record must be updated. However, some domain registrars do not allow CNAME records for the root domain or for wildcard domains. In that case, you must use an A record.
+
+- An A (Address) record maps a domain name to an IP address.
+- A CNAME (Canonical Name) record maps a domain name to another domain name. DNS uses the second name to look up the address. Users still see the first domain name in their browser. For example, you could map contoso.com to your webapp.azurewebsites.net.
+
+3. **Enable the custom domain**: After obtaining your domain and creating your DNS record, you can use the portal to validate the custom domain and add it to your web app.
+
+Note: To map a custom DNS name to a web app, the web app's App Service plan must be a paid tier.
+
+<hr>
+
+## Back up an app service
+The Backup and Restore feature in Azure App Service lets you easily create app backups manually or on a schedule. You can configure the backups to be retained for up to an indefinite amount of time. You can restore the app to a snapshot of a previous state by overwriting the existing app or restoring to another app.
+
+## What gets backed up
+App Service can backup the following information to an Azure storage account and container that you have configured your app to use.
+- App configuration.
+- File content.
+- Database connected to your app (SQL Database, Azure Database for MYSQL, Azure Database for PostgreSQL, MYSQL in-app).
+
+## Considerations
+- The Backup and Restore feature requires the App Service plan to be in the Standard or Premium tier.
+- You can configure backups manually or on a schedule.
+- You need an Azure storage account and container in the same subscription as the app that you want to back up. After you have made one or more backups for your app, the backups are visible on the Containers page of your storage account, and your app. In the storage account, each backup consists of a .zip file that contains the backup data and an .xml file that contains a manifest of your .zip file contents. You can unzip and browse these files if you want to access your backups without actually performing an app restore.
+- Full backups are the default. When a full backup is restored, all content on the site is replaced with whatever is in the backup. If a file is on the site, but not in the backup it gets deleted.
+- Partial backups are supported. Partial backups allow you to choose exactly which files you want to back up. When a partial backup is restored, any content that is located in one of the excluded directories, or any excluded file, is left as is. You restore partial backups of your site the same way you would restore a regular backup.
+- You can exclude files and folders you do not want in the backup.
+- Backups can be up to 10 GB of app and database content.
+- Using a firewall enabled storage account as the destination for your backups is not supported.
+
+<hr>
+
+## Use Application Insights
+Application Insights, a feature of Azure Monitor, monitors your live applications. It will automatically detect performance anomalies, and includes powerful analytics tools to help you diagnose issues and to understand what users actually do with your app. It's designed to help you continuously improve performance and usability. Insights works on various platforms including .NET, Node.js, and Java EE, hosted on-premises, hybrid, or any public cloud. It integrates with your DevOps process, and has connection points to a variety of development tools. It can monitor and analyze data from mobile apps by integrating with Visual Studio App Center.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-app-services/media/app-insights-16629887.png">
+
+## Application Insights features
+Application Insights is aimed at the development team, to help you understand how your app is performing and how it's being used. It monitors:
+- **Request rates, response times, and failure rates**
+- **Dependency rates, response times, and failure rates**: Find out whether external services are slowing you down.
+- **Exceptions**: Both server and browser exceptions are reported.
+- **Page views and load performance**: Reported by your users' browsers.
+- **User and session counts**
+- **Performance counters**: From your Windows and Linux server machines, such as CPU, memory, and network usage.
+- **Host diagnostics**: From Docker or Azure.
+- **Diagnostic trace logs**: From your app - so you can correlate trace events with requests.
+- **Custom events and metrics**: That your write yourself in the client or server code.
+
+<hr>
+
+## Knowledge check
+1. When cloning a configuration from another deployment slot, which configuration setting follows the content across the swap? -> Connection strings
+2. The marketing team wants to know which web pages are most popular, at what times of day, and where the users are located. Which of the following should be recommended? -> Application Insights
+3. Which of the following is a valid automated deployment source? GitHub
