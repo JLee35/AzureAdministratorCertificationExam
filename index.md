@@ -3235,3 +3235,1143 @@ You should be familiar with the following key terms before using Docker and Cont
 ## Knowledge check
 1. What is a reason to select VMs or containers? -> VMs provide complete isolation from the host operating system and other VMs.
 2. What is a feature of Azure Container Instances? -> Billing occurs when the container is in use.
+
+<hr>
+
+## Configure Azure Kubernetes Service
+You will learn how to configure Azure Kubernetes including networking, storage, and scaling.
+
+## Objectives
+- Identify AKS components including pods, clusters, and nodes.
+- Configure network connections for AKS.
+- Configure storage options for AKS.
+- Implement security options for AKS.
+- Scale AKS including adding Azure Container Instances.
+
+<hr>
+
+## Explore the AKS terminology
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-kubernetes-service/media/kubernetes-terms-ee59aa6e.png">
+
+- **Pools** are groups of nodes with identical configurations.
+- **Nodes** are individual virtual machines running containerized applications.
+- **Pods** are a single instance of an application. A pod can contain multiple containers.
+- **Container** is a lightweight and portable executable image that contains software and all of its dependencies.
+- **Deployment** has one or more identical pods managed by Kubernetes.
+- **Manifest** is the YAML file describing a deployment.
+
+<hr>
+
+## Explore the AKS cluster and node architecture
+A Kubernetes cluster is divided into two components:
+- **Azure-managed nodes**, which provide the core Kubernetes services and orchestration of application workloads.
+- **Customer-managed nodes** that run your application workloads.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-kubernetes-service/media/kubernetes-clusters-4ae0bac1.png">
+
+## Azure-managed node
+When you create an AKS cluster, a cluster node is automatically created and configured. This node is provided as a managed Azure resource abstracted from the user. You pay only for the running agent nodes.
+
+## Nodes and node pools
+To run your applications and supporting services, you need a Kubernetes node. An *AKS cluster* contains one ore more nodes (Azure VMs) that run the Kubernetes node components and the container runtime.
+
+- The *kubelet* is the Kubernetes agent that processes the orchestration requests from the Azure-managed node, and scheduling of running the requested containers.
+- Virtual networking is handled by the *kube-proxy* on each node. The proxy routes network traffic and manages IP addressing for services and pods.
+- The *container runtime* is the component that allows containerized applications to run and interact with additional resources such as the virtual network and storage. AKS clusters using Kubernetes version 1.19 node pools and greater used containerd as its container runtime. AKS clusters using Kubernetes prior to v1.19 to node pools use Moby (upstream docker) as its container runtime.
+
+Nodes of the same configuration are grouped together into *node pools*. A Kubernetes cluster contains one or more node pools. The initial number of nodes and size are defined when you create an AKS cluster, which creates a default node pool. This default node pool in AKS contains the underlying VMs that run your agent nodes.
+
+<hr>
+
+## Configuring AKS networking
+To allow access to your applications, or for application components to communicate with each other, Kubernetes provides an abstraction layer to virtual networking. Kubernetes nodes are connected to a virtual network, and can provide inbound and outbound connectivity for pods. The *kube-proxy* component runs on each node to provide these network features.
+
+In Kubernetes, Serices logically group pods to allow for direct access via an IP address or DNS name and on a specific port. You can also distribute traffic using a load balancer. More complex routing of application traffic can also be achieved with Ingress Controllers. Security and filtering of the network traffic for pods is possible with Kubernetes network policies.
+
+The Azure platform also helps to simplify virtual networking for AKS clusters. When you create a Kubernetes load balancer, the underlying Azure load balancer resource is created and configured. As you open network ports to pods, the corresponding Azure network security group rules are configured. For HTTP application routing, Azure can also configure external DSN as new ingress routes are configured.
+
+## Services
+To simplify the network configuration for application workloads, Kubernetes uses Services to logically group a set of pods together and provide network connectivity. The following Service types are available:
+
+- **Cluster IP**: Creates an internal IP address for use within the AKS cluster. Good for internal-only applications that support other workloads within the cluster.
+- **NodePort**: Creates a port mapping on the underlying node that allows the application to be access directly with the node IP address and port.
+- **LoadBalancer**: Creates an Azure load balancer resource, configures an external IP address, and connects the requested pods to the load balancer backend pool. To allow customers traffic to reach the application, load-balancing rules are created on the desired ports.
+- **ExternalName**: Creates a specific DNS entry to easier application access.
+
+The IP address for load balancers and services can be dynamically assigned, or you can specify an existing static IP address to use. Both internal and external static IP addresses can be assigned. The existing static IP address is often tied to a DNS entry.
+
+Both *internal* and *external* load balancers can be created. Internal load balancers are only assigned a private IP address, so can't be accessed from the Internet.
+
+## Pods
+Kubernetes uses pods to run an instance of your application. A pod represents a single instance of your application. Pods typically have a 1:1 mapping with a container, although there are advanced scenarios where a pod might contain multiple containers. These multi-container pods are scheduled together on the same node, and allow containers to share related resources.
+
+When you create a pod, you can define resource limits to request a certain amount of CPU or memory resources. The Kubernetes Scheduler attempts to schedule the pods to run on a node with available resources to meet the request. You can also specify maximum resource limits that prevent a given pod from consuming too much compute resource from the underlying node.
+
+Note: A best practice is to include resource limits for all pods to help the Kubernetes Scheduler understand what resources are needed and permitted.
+
+A pod is a logical resource, but the container (or containers) is where the application workloads run. Pods are typically ephemeral, disposable resources. Therefore, individually scheduled pods miss some of the high availability and redundancy features Kubernetes provides. Instead, pods are usually deployed and managed by Kubernetes controllers, such as the Deployment controller.
+
+<hr>
+
+## Configure AKS storage
+This section introduces the core concepts that provide storage to your applications in AKS:
+- Volumes
+- Persistent volumes
+- Storage classes
+- Persistent volume claims
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-kubernetes-service/media/kubernetes-storage-b14b0f2d.png">
+
+## Volumes
+A *volume* represents a way to store, retrieve, and persist data across pods and through the application lifecycle.
+
+Traditional volumes to store and retrieve data are created as Kubernetes resources backed by Azure Storage. You can manually create these data volumes to be assigned to pods directly, or have Kubernetes automatically create them. These data volumes can use Azure Disks or Azure Files:
+
+- *Azure Disks* can be used to create a Kubernetes *DataDisk* resource. Disks can use Azure Premium storage, backed by high-performance SSDs, or Azure Standard storage, backed by regular HDDs. For most production and development workloads, use Premium storage. Azure Disks are mounted as *ReadWriteOnce* so are only available to a single node. For storage volumes that can be accessed by multiple nodes simultaneously, use Azure Files.
+
+- *Azure Files* can be used to mount an SMB 3.0 share backed by an Azure Storage account to pods. Files let you share data across multiple nodes and pods. Files can use Azure Standard storage backend by regular HDDs, or Azure Premium storage, backed by high-performance SSDs.
+
+## Persistent volumes
+Volumes are defined and created as part of the pod lifecycle only exist until the pod is deleted. Pods often expect their storage to remain if a pod is rescheduled on a different host during a maintenance event, especially in StatefulSets. A *persistent volume* (PV) is a storage resource created and managed by the Kubernetes API that can exist beyond the lifetime of an individual pod.
+
+Azure Disks or Files are used to provide the PersistentVolume. As noted in the previous section on Volumes, the choice of Disks or Files is often determined by the need for concurrent access to the data or the performance tier.
+
+A PersistentVolume can be *statically* created by a cluster administrator, or dynamically created by the Kubernetes API server. If a pod is scheduled and requests storage that is not currently available, Kubenetes can create the underlying Azure Disk or Files storage and attach it to the pod. Dynamic provisioning  uses a *StorageClass* to identify what type of Azure storage needs to be created.
+
+## Storage classes
+To define different tiers of storage, such as Premium and Standard, you can create a *StorageClass*. The StorageClass also defines the *reclaimPolicy*. This reclaimPolicy controls the behavior of the underlying Azure storage resource when the pod is deleted and the persistent volume may no longer be required. The underlying storage resource can be deleted, or retained for use with a future pod.
+
+In AKS, four initial StorageClasses are created for cluster using the in-ree storage plugins:
+
+- default: uses Azure StandardSSD storage to create a Managed Disk. The reclaim policy ensure that the underlying Azure Disk is deleted when the persistent volume that used it is deleted.
+- managed-premium: Uses Azure Premium storage to create a Managed Disk. The reclaim policy again ensures that the underlying Azure Disk is deleted when the persistent volume that used it is deleted.
+- azurefile: Uses Azure Standard storage to create an Azure File Share. The reclaim poicy ensures that the underlying Azure File Share is deleted when the persistent volume that used it is deleted.
+
+If no StorageClass is specified for a persistent volume, the default StorageClass is used. Take care when requesting persistent volumes so that they use the appropriate storage you need. You can create a StorageClass for additional needs using `kubectl`.
+
+## Persistent volume claims
+A PersistentVolumeClaim requests either Disk or File storage of a particular StorageClass, access mode, and size. The Kubernetes API server can dynamically provision the underlying storage resource in Azure if there is no existing resource to fulfill the claim based on the defined StorageClass. The pod definition includes the volume mount once the volume has been connected to the pod.
+
+A PersistentVolume is *bound* to a PersistentVolumeClaim once an availble storage resource has been assigned to the pod requesting it. There is 1:1 mapping of persistent volumes to claims.
+
+<hr>
+
+## Configure AKS scaling
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-kubernetes-service/media/kubernetes-scale-a7fff281.png">
+
+## Manually scale pods or nodes
+You can manually scale replicas (pods) and nodes to test how your application responds to a change in available resources and state. Manually scaling resources also lets you define a set amount of resources to use to maintain a fixed cost, such as the number of nodes. To manually scale, you define the replica or node count, and the Kubernetes API schedules creating new pods or draining nodes.
+
+## Horizontal pod autoscaler
+Kubernetes uses the horizontal pod autoscaler (HPA) to monitor the resource demand and automatically scale the number of replicas. By default, the HPA checks the Metrics API every 30 seconds for any required chanes in replica count. When change are required, the number of replicas is increased or decreased accordingly. HPA works with AKS clusters that have deployed the Metrics Server for Kubernetes 1.8+.
+
+When you configure the HPA for a given deployment, you define the minimum and maximum number of replicas that can run. You also define the metric to monitor and base any scaling decisions to, such as CPU usage.
+
+## Cooldown of scaling events
+As the horizontal pod autoscaler checks the Metrics API every 30 seconds, previous scale events may not have successfully completed before another check is made. This behavior could cause the horizontal pod autoscaler to change the number of replicas before the previous scale event has been able to receive application workload and the resource demands to adjust accordingly.
+
+To minimize these race events, cooldown or delay values can be set. These values define how long the HPA must wait after a scale event before another scale event can be triggered. By default, the delay on scale up events is 3 minutes, and the deplay on scale down events is 5 minutes.
+
+You may need to tune these cooldown values. The default cooldown values may give the impression that the HPA isn't scaling the replica count quickly enough. For example, to more quickly increase the number of replicas in use, reduce the `--horizontal-pod-autoscaler-upscale-delay` when you create your horizontal pod autoscaler definitions using `kubectl`.
+
+## Cluster autoscaler
+To respond to changing pod demands, Kubernetes has a cluster autoscaler that adjusts the number of nodes based on the requested compute resources in the node pool. By default, the cluster autoscaler checks the API server every 10 seconds for any required chanes in node count. If the cluster autoscale determines that a change is required, the number of nodes in your AKS cluster is increased or decreased accordingly. The cluster autoscaler works with RBAC-enabled AKS cluster that run Kubernetes 1.10x or higher.
+
+Cluster autoscaler is typically used alongside the HPA. When combined, the HPA increases or decreases the number of pods based on application demand, and the cluster autoscaler adjusts the number of nodes as needed to run those additional pods accordingly.
+
+## Scale out events
+If a node does not have sufficient compute resources to run a requested pod, that pod cannot progress through the scheduling process. The pod cannot start unless other compute resources are available within the node pool.
+
+When the cluser autoscaler notices pods that cannot be scheduled due to node pool resource contraints, the number of nodes within the node pool is increased to provide the extra compute resources. When those addditional nodes are successfully deployed and available for use within the node pool, the pods are then scheduled to run on them.
+
+If your application needs to scale rapidly, some pods may remain in a state waiting to be scheduled until the new nodes deployed by the cluster autoscaler can accept the scheduled pods. For applications that have high burst demands, you can scale with virtual nodes and Azure Container Instances.
+
+## Scale in events
+The cluster autoscaler also monitors the pod scheduling status for nodes that have not recently received new scheduling requests. This scenario indicates that the node pool has more compute resources than are required, and that the number of nodes can be decreased.
+
+A node that passes a threshold for no longer being needed for 10 minutes by default is scheduled for deletion. When this situation occurs, pods are scheduled to run on other nodes within the node pool, and the cluster autoscaler decreases the number of nodes.
+
+You applications may experience some disruption as pods are scheduled on different nodes when the cluster autoscaler decreases the number of nodes. To minimize disruption, avoid applications that use a single pod instance.
+
+<hr>
+
+## Configure AKS scaling to Azure Container Instances
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-kubernetes-service/media/kubernetes-burst-686ee747.png">
+
+To rapidly scale your AKS cluster, you can integrate with Azure Container Instances (ACI). Kubernetes had built-in components to scale the replica and node count. However, if your application needs to rapidly scale, the HPA may schedule more pods than can be provided by the existing compute resources in the node pool. If configured, this scenario would then trigger the cluster autoscaler to deploy additional nodes in the node pool. It may take a few minutes for those nodes to successfully provision.
+
+ACI lets you quickly deploy container instances without more infrastructure overhead. When you connect with AKS, ACI becomes a secured, logical extension of your AKS cluster. The Virtual Kubelet component is installed in your AKS cluster that presents ACI as a virtual Kubernetes node. Kubernetes can then schedule pods that run as ACI instances through virtual nodes, not as pods on VM nodes directly in your AKS cluster.
+
+Your application requires no modification to use virtual nodes. Deployments can scale across AKS and ACI. There is no delay when the cluster autoscaler deploys new nodes in your AKS cluster.
+
+Virtual nodes are deployed to another subnet in the same virtual network as your AKS cluster. This virtual network configuration allows the traffic between ACI and AKS to be secured. Like an AKS cluster, an ACI instance is a secure, logical compute resource that is isolated from other users.
+
+<hr>
+
+## Knowledge check
+1. What is the Kubernetes agent that processes the orchestration requests and schedules running the requested containers? -> kublet
+2. Which service would be best for internal-only applications that support other workloads within the cluster? -> ClusterIP
+3. The leadership team has decided to move all servicesto Azure Kubernetes service. What contributes to the monthly Azure charge? -> Per node VM.
+
+<hr>
+
+## Summary
+Azure Kubernetes Services (AKS) is recommended when you need full container organization. AKS includes discovery across multiple containers, automatic scaling, and coordinated application upgrades.
+
+<hr>
+
+## Manage virtual machines with the Azure CLI
+Learn how to use the cross-platform Azure CLI to create, start, stop, and perform other management tasks related to VMs in Azure.
+
+## Objectives
+- Create a VM with the Azure CLI
+- Resize VMs with the Azure CLI
+- Perform basic management tasks using the Azure CLI
+- Connect to a running VM with SSH and the Azure CLI
+
+<hr>
+
+## Knowledge check
+1. Can you access Azure CLI on a tablet? -> Yes
+2. What argument can you use to not block the CLI while a script is running? -> '--no-wait'
+3. What can you use with Azure CLI to filter the results to get only the data you need? -> '--query'
+
+<hr>
+
+## Create a Windows VM in Azure
+Azure virtual machines (VMs) enable you to create dedicated compute resources in minutes that can be used just like a physical desktop or server machine.
+
+## Objectives
+- Create a Windows virtual machine using the Azure portal
+- Connect to a running Windows virtual machine using Remote Desktop
+- Install software and change the network configuration on a VM using the Azure portal.
+
+<hr>
+
+## Introduction to Windows VMs in Azure
+Azure VMs are an on-demand, scalable cloud computing resource. They're similar to virtual machines that are hosted in Winkdows Hyper-V. They include processor, memory, storage, and networking resources. You can start and stop VMs at will, just like with Hyper-V, and manage them from the Azure portal or with the Azure CLI. You can also use a Remote Desktop Protocol (RDP) client to connect directly to the Windows desktop user interface and use the VM as if you were signed in to a local Windows computer.
+
+## Creating an Azure VM
+You can define and deploy VMs on Azure in several ways: the Azure portal, a script (using the Azure CLI or Azure PowerShell), or through an ARM template. In all cases, you'll need to supply several pieces of information, which we'll cover shortly.
+
+The Azure Marketplace also provides pre-configured images that include both an OS and popular software tools installed for specific scenarios.
+
+## Resources used in a Windows VM
+When creating a Windows VM in Azure, you also create resources to host the VM. These resources work together to virtualize a computer and run the Windows operating system. These must either exist (and be selected during VM creation), or they will be created with the VM.
+
+- A VM that provides CPU and memory resources
+- An Azure Storage account to hold the virtual hard disks
+- Virtual disks to hold the OS, applications, and data
+- Virtual network (VNet) to connect the VM to other Azure services on your own on-premises hardware
+- A network interface to communicate with the VNet
+- A public IP address so you can access the VM (this is optional)
+
+Like other Azure services, you'll need a **Resource Group** to contain the VM (and optionally group these resources together for administration). When you create a new VM, you can either use an existing resource group or create a new one.
+
+## Choose the VM image
+Selecting an image is one of the first and most important decisions you'll make when creating a VM. An image is a template that's used to create a VM. These templates include an OS and often other software, such as development tools or web-hosting environments.
+
+Any application that the computer can support can be included in the VM image. You can create a VM fom an image that's pre-configured to exactly match your requirements, such as hosting an ASP.NET Core app.
+
+## Sizing your VM
+Just as a physical machines has a certain amount of memory and CPU power, so does a VM. Azure offers a range of VMs of differening size at different price points. The size that you choose will determine the VMs processing power, memory, and max storage capacity.
+
+Warning: There are quota limits on each subscription that can impact VM creation. In the classic deployment model, you cannot have more than 20 virtual *cores* across all VMs within a region. You can either split up VMs across regions or file an online request to increase your limits.
+
+VM sizes are grouped into categories, starting with the B-series for basic testing, and running up to the H-series for massive computing tasks. You should select the size of the VM based on the workload you want to perform. It is possible to change the size of a VM after it's been created, but the VM must be stopped first, so it's best to size it appropriately from the start if possible.
+
+## Scenario based guidelines
+
+- **General use computer/web**: Use B, or D*** VM sizes
+- **Heavy computational tasks**: Use F*** VM sizes
+- **Large memory usage**: Use E**, M, G*, or D*v2 sizes
+- **Data storage and processing**: Use Ls
+- **Heavy graphics rendering**: Use N** sizes
+- **High-performance computing (HPC)**: Use H
+
+## Choosing storage options
+Disk technology options include a traditional platter-based hard dist drive (HDD) or a more modern solid-state drive (SSD).
+
+## Mapping storage to disks
+Azure uses virtual hard disks (VHDs) to represent physical disks for the VM. VHDs replicate the logical format and data of a disk drive, but are stored as page blobs in an Azure Storage account. You can choose on a per-disk basis what type of storage it should use (SSD or HDD). This allows you to control the performance of each disk, likely based on the I/O you plan to perform on it.
+
+By default, two VHDs will be created for your Windows VM:
+1. The **Operating System disk**: This is your primary or C: drive and has a maximum capacity of 2048 GB.
+2. A **Temporary disk**: This provides temporary storage for the OS or any apps. It is configured as the D: drive by default and is sized based on the VM size, making it an idea location for the Windows paging file.
+
+Warning: A temporary disk is not persistent. You should only write data to this disk that you are willing to lose at any time.
+
+## What about data?
+You can store data on the C: drive along with the OS, but a better approach is to create dedicated *data disks*. You can create and attach additional disks to the VM. Each data disk can hold up to 32,767 GiB (gibibytes) of data, with the maximum amount of storage determed by the VM size you select.
+
+Note: An interesting capability is to create a VHD image from a real disk. This allows you to easily migrate *existing* information from an on-premises computer to the cloud.
+
+## Unmanaged vs. Managed disks
+The final storage choice you'll make is whether to use **unmanaged** or **managed** disks.
+
+With unmanaged disks, you are responsible for the storage accounts that are used to hold the VHDs corresponding to your VM disks. You pay the storage account rates for the amount of space you use. A single storage account has a fixed rate limit of 20,000 I/O operations/sec. This means that a single storage account is capable of supporting 40 standard virtual hard disks at full throttle. If you need to scale out, then you need more than one storage account, which can get complicated.
+
+Managed disks are the newer (and recommended) disk-storage model. They elegantly solve the complexity of unmanaged disks by putting the burden of managing the storage accounts onto Azure. You specify the disk type (Premium or Standard) and the size of the disk, and Azure creates and manages both the disk and the storage it uses. You don't have to worry about storage account limits, which makes them easier to scale out. They also offer several other benefits:
+
+- **Increased reliability**: Azure ensures that VHDs associated with high-reliability VMs will be placed in different parts of Azure storage to provide similar levels of resilience.
+- **Better security**: Managed disks are truly managed resources in the resource group. This means they can use role-based access control to restrict who can work with the VHD data.
+- **Snapshot support**: You can use snapshots to create a readonly copy of a VHD. You have to shut down the owning VM, but creating the snapshot only takes a few seconds. Once it's done, you can power on the VM and use the snapshot to create a duplicate VM to troubleshoot a production issue or roll back the VM to the point in time that the snapshot was taken.
+- **Backup support**: You can automatically back up managed disks to different regions for disaster recovery with Azure Backup, all without affecting the service of the VM.
+
+## Network communication
+VMs communicate with external resources using a virtual network (VNet). The VNet represents a private network in a single region on which your resources communicate. A virtual network is just like the networks you manage on-premises. You can divide them up with subnets to isolate resources, connect them to other networks (including your on-premises networks), and apply traffic rules to govern inbound and outbound connections.
+
+## Planning your network
+When you create a new VM, you'll have the option of creating a new virtual network, or using an existing VNet in your region.
+
+Having Azure create the network together with the VM is simple, but it's likely not ideal for most scenarios. It's better to plan your network requirements *up front* for all the components in your architecture and create the VNet structure you'll need separately, and then create the VMs and place them into the already-created VNets.
+
+<hr>
+
+## What is the Remote Desktop Protocol?
+Remote Desktop (RDP) provides remote connectivity to the UI of Windows-based computers. RDP enables you to sign in to a remote physical or virtual Windows computer and control that computer as if you were seated at the console. An RDP connection enables you to carry out the vast majority of operations that you can do from the console of a physical computer, with the exception of some power and hardware-related functions.
+
+An RDP connection requires an RDP client. Microsoft provides RDP clients for the following operating systems:
+- Windows (build-int)
+- macOS
+- iOS
+- Android
+
+There are also open-source Linux clients, such as Remmina, that allow you to connect to a Windows PC from an Ubuntu distribution.
+
+## Connecting to an Azure VM
+With a public IP, we can communicate with the VM over the Internet. Alternatively, we can set up a VPN to connects our on-premises network to Azure, letting us securely connect to the VM without exposing a public IP.
+
+One thing to be aware of with public IP addresses in Azure is they're often dynamically allocated. That means the IP address can change over time; for VMs, this happens when the VM is restarted. You can pay more to assign static addresses if you want to connect directly to an IP address instead of a name and need to ensure that the IP address won't change.
+
+## How to you connect to a VM in Azure using RDP?
+In the Azure portal, go to the properties of your VM, and at the top click, **Connect**. This will show you the IP addresses assigned to the VM and give you the option to download a **preconfigured.rdp** file that Windows then opens in the RDP client. You can choose to connect over the public IP address of the VM in the RDP file. Instead, if you're connecting over VPN or ExpressRoute, you can select the internal IP address. You can also select the port number for the connection.
+
+If you're using a static public IP address for the VM, you can save the **.rdp** file to your desktop. If you're using dynamic IP addressing, the **.rdp** file only remains valid while the VM is running. If you stop and restart the VM, you must download another **.rdp** file.
+
+When you connect, you'll typically receive two warnings. These are:
+- **Publisher warning**: caused by the **.rdp** file not being publicly signed
+- **Certificate warning**: caused by the machine certificate not being trusted
+
+In test environments, you can ignore these warnings. In production environments, the **.rdp** file can be signed using **RDPSIGN.EXE** and the machine certificate placed in the client's **Trusted Root Certification Authorities** store. 
+
+
+<hr>
+
+## Open ports in Azure VMs
+By default, new VMs are locked down.
+
+Apps can make outgoing requests, but the only inbound traffic allowed is from the virtual network (for example, other resources on the same network), and from Azure's Load Balancer (probe checks).
+
+There are two steps to adjusting the configuration to support FTP. When you create a new VM, you have an opportunity to open a few common ports (RDP, HTTP, HTTPS, and SSH). However, if you require other changes to the firewall, you will need to do them yourself.
+
+The process for this involves two steps:
+1. Create a Network Security Group.
+2. Create an inbound rule allowing traffic on port 20 and 21 for active FTP support.
+
+## What is a Network Security Group
+Virtual networks (VNets) are the foundation of the Azure networking model, and provide isolation and protection. Network Security Groups (NSGs) are the main tool you use to enforce and control network traffic rules at the networking level. NSGs are an optional security layer that provides a software firewall by filtering inbound and outbound traffic on VNet.
+
+Security groups can be associated to a network interface (for per-host rules), a subnet in the virtual network (to apply to multiple resources), or both levels.
+
+## Security group rules
+NSGs use *rules* to allow or deny traffic moving through the network. Each rule identifies the source and destination address (or range), protocol, port (or range), direction (inbound or outbound), a numeric priority, and whether to allow or deny the traffic that matches the rule. The following illustration shows NSG rules applied at the subnet and network interface levels.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/create-windows-virtual-machine-in-azure/media/7-nsg-rules.png">
+
+Each security group has a set of default security rules to apply the default network rules described above. These default rules cannot be modified, but *can* be overriden.
+
+# How Azure uses network rules
+For inbound traffic, Azure processes the security group associated to the subnet, then the security group applied to the network interface. Outbound traffic is processed in the opposite order (the network interface first, followed by the subnet).
+
+**Warning**: Security groups are optional at both levels. If no security group is applied, then **all traffic is allowed** by Azure. If the VM has a public IP, this could be a serious risk, particularly if the OS doesn't provide some sort of firewall.
+
+The rules are evaluated in *priority order*, starting with the **lowest priority** rule. Deny roles always *stop* the evaluation. For example, if an outbound request is blocked by a network interface rule, any rules applied to the subnet will not be checked. In order for traffic to be allowed through the security group, it must pass through all applied groups.
+
+The last rule is always a **Deny All** rule. This is a default rule added to every security group for both inbound and outbound traffic with a priority of 
+65500. That means to have traffic pass through the security group, *you must have an allow rule* or it will be blocked by the default final rule.
+
+Note: SMTP (port 25) is a special case. Depending on your subscription level and when your account was created, outbound SMTP traffic may be blocked. You can make a request to remove this restriction with business justification.
+
+<hr>
+
+## Knowledge check
+1. When creating a Windows virtual machine in Azure, which port would you open using the INBOUND PORT RULES in order to allow remote-desktop access? -> RDP (3389).
+2. Suppose you have an application running on Windows VM in Azure. What is the best-practice guidance on where the app should store data files? -> Attached data disk.
+3. What is the final rule that is applied in every Network Security Group? -> Deny All.
+
+<hr>
+
+## Host a web application with Azure App Service
+Azure App Service enables you to build adn host web applications in the programming language of your choice without managing infrastructure.
+
+## Objectives
+- Use the Azure portal to create an Azure App Service web app.
+- Use developer tools to create the code for a starter web application.
+- Deploy your code to Azure App Service
+
+<hr>
+
+## What is Azure App Service?
+Azure App Service is a fully managed web application hosting platform. This platform as a service (PaaS) offered by Azure allows you to focus on designing and building your app while Azure takes care of the infrastructure to run and scale your applications.
+
+## Deployment slots
+Add **deployment slots** to an Azure Service web app to easily swap the staging deployment slot with the production slot when you are ready.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/host-a-web-app-with-azure-app-service/media/2-deployment-slots.png">
+
+## Integrated Visual Studio publishing and FTP pushing
+You can publish your app to Azure with Visual Studio via Web Deploy technology. App Service also supports FTP-based publishing for more traditional workflows.
+
+## Built-in auto scale support (automatic scale-out based on real-world load)
+The ability to scale up/down or scale out is baked into the web app. Depending on the web app's usage, you can scale your app up/down by increasing/decreasing the resources of the underlying machine that is hosting your web app. Resoures can be number of cores or the amount of RAM available.
+
+Scaling out, on the other hand, is the ability to increase the number of machine instances that are running your web app.
+
+## App Service Plans
+An App Service plan is a set of virtual server resources that run in App Service apps. A plan's **size** (sometimes referred to as its **sku** or **pricing tier**) determines the performance characteristics of the virtual servers that run the apps assigned to the plan and the App Service features that those apps have access to. Every App Service web app you create must be assigned to a single App Service plan that runs it.
+
+A single App Service plan can host multiple App Service web apps. In most cases, the number of apps you can run on a single plan will be limited by the performance characteristics of the apps and the resource limitations of the plan. 
+
+App Service plans are the unit of billing for App Service. The size of each App Service plan is your subscription, in addition to the bandwidth resources used by the apps deployed to those plans, determines the price that you pay. The number of web apps deployed on your App Service plan has no effect on your bill.
+
+You can use any of the available Azure management tools to create an App Service plan. When you create a web app via the Azure portal, the wizard will help you create a new plan at the same time if you don't already have one.
+
+<hr>
+
+## Manual deployment
+There are a few options that you can use to manually push your code to Azure:
+- **Git**: App Service web apps feature a Git URL that you can add as a remote repository. Pushing to the remote repo will deploy your app.
+- **az webapp up**: `webapp up` is a feature of the `az` command-line interface that packages your app and deploys it. Unlike other deployment methods, `az webapp up` can create a new App Service web app for you if you haven't already created one.
+- **ZIP deploy**: Use `az webapp deployment source config-zip` to send a ZIP of your local files to App Service. You can also access ZIP deploy via basic HTTP utilities such as `curl`.
+- **WAR deploy**: WAR deploy is an App Service deployment mechanism designed for deploying Java web applications using WAR packages. You can access WAR deploy using the Kudu HTTP API located at `http://<your-app-name>.scm.azurewebsites.net/api/wardeploy`. If this fails, try `https://<your-app-name>.scm.azurewebsites.net/api/wardeploy`.
+- **Visual Studio**: Visual Studio features an App Service deployment wizard that can walk you through the deployment process.
+- **FTP/S**: FTP or FTPS is a traditional way of pushing your code to many hosting environments, including App Service.
+
+<hr>
+
+## Knowledge check
+1. True or false: Azure App service can automatically scale your web application to meet traffic demand? -> True.
+2. What isn't a valid automated deployment source? -> SharePoint
+
+<hr>
+
+## Protect your virtual machine settings with Azure Automation State Configuration
+Create a desired state configuration script that checks that IIS is installed. Onboard VMs for management by Azure Automation. Automatically install IIS on the VMs where that feature is missing.
+
+## Objectives
+- Identify the capabilities of Azure Automation State Configuration
+- Learn how to onboard VMs for management by Azure Automation
+- Automatically update VMs to maintain a desired state configuration (DSC).
+
+<hr>
+
+## What is Azure Automation State Configuration?
+You use Azure Automation State Configuration to make sure that the virtual machines (VMs) in a cluster are in a consistent state, with the same software installed and the same configurations.
+
+Azure Automation State Configuration is an Azure service built on PowerShell. It enables you to consistently deploy, reliably monitor, and automatically update the desired state of all your resources. Azure Automation provides tools to define configurations and apply them to real and virtual machines.
+
+## Why use Azure Automation State Configuration?
+Manually maintaining a correct and consistent configuration for the servers that run your services can be difficult and error prone. Azure Automation State Configuration uses PowerShell DSC to help address these challenges. It centrally manages your DSC artifacts and the DSC process.
+
+Azure Automation State configuration has a built-in pull server. You can target nodes to automatically receive configurations from this pull server, conform to the desired state, and report back on their compliance. You can target virtual or physical Windows or Linux machines, in the cloud or on-premises.
+
+You can use Azure Monitor logs to review the compliance of your nodes by configuring Azure Automation State Configuration to send this data.
+
+## What is PowerShell DSC?
+PowerShell DSC is a declarative management platform that Azure Automation State Configuration uses to configure, deploy, and control systems. A declarative programming language separates intent from execution. You specify the desired state and let DSC do the work to get there. You don't have to know how to implement or deploy a feature when a DSC resource is available. Instead, you focus on the structure of your deployment.
+
+If you're already using PowerShell, you might wonder why you need DSC. Consider the following example. When you want to create a share on a Windows server, you might use this PowerShell command:
+
+        # Create a file share
+        New-SmbShare -Name MyFileShare -Path C:\Shared -FullAccess User1 -ReadAccess User2
+
+This script is straightforward and easy to understand. However, if you use this script in production, you'll encounter several problems. Consider what might happen if the script runs multiple times or if `User2` already has full access rather than read only access.
+
+This approach isn't *idempotent*. To achieve idempotence in PowerShell, you need to add logic and error handling. If the file share doesn't exist, you create it. If the share does exist, there's no need to create it. If `User2` exists but doesn't have read access, you add read access.
+
+You PowerShell script would look something like:
+
+        $shareExists = $false
+        $smbShare = Get-SmbShare -Name $Name -ErrorAction SilentlyContinue
+        if($smbShare -ne $null)
+        {
+                Write-Verbose -Message "Share with name $Name exists"
+                $shareExists = $true
+        }
+
+        if ($shareExists -eq $false)
+        {
+                Write-Verbose "Creating share $Name to ensure it is Present"
+                New-SmbShare @psboundparameters
+        }
+        else
+        {
+                # Need to call either Set-SmbShare or *ShareAccess cmdlets
+                if ($psboundparameters.ContainsKey("ChangeAccess"))
+                {
+                        #...etc., etc., etc
+                }
+        }
+
+Other special cases you haven't considered might come to light only when problems arise. DSC handles unexpected cases automatically. With DSC, you describe the result rather than the process to achieve the result.
+
+The following DSC code snippet shows an example:
+        Configuration Create_Share
+        {
+                Import-DscResource -Module xSmbShare
+                # A node describes the VM to be configured
+
+                Node $NodeName
+                {
+                        # A node definition contains one or more resource blocks
+                        # A resource block describes the resource to be configured on the node
+                        xSmbShare MySMBShare
+                        {
+                                Ensure      = "Present"
+                                Name        = "MyFileShare"
+                                Path        = "C:\Shared"
+                                ReadAccess  = "User1"
+                                FullAccess  = "User2"
+                                Description = "This is an updated description for this share"
+                        }
+                }
+        }
+
+The example above uses the `xSmbShare` module, which tells DSC how to check the state of the file share. The DSC Resource Kit has more than 80 resource modules, including one for installing an IIS site. You'll find a link to the DSC Resource Kit at the end of the module.
+
+You'll learn more about the structure of the PowerShell DSC code in the next unit.
+
+## What is the LCM?
+The local configuration manager (LCM) is a component of the Windows Management Framework (WMF) on a Windows operating system. The LCM is responsible for updating the state of a node, like a VM, to match the desired state. Every time the LCM runs, it completes the following steps:
+
+1. **Get**: Get the current state of the node.
+2. **Test**: Compare the current state of a node against the desired state by using a compiled DSC script (.mof file).
+3. **Set**: Update the node to match the desired state described in teh .mof file.
+
+You configure the LCM when you register a VM with Azure Automation.
+
+## Push and pull architectures in DSC
+The LCM on each node can operate in two modes.
+
+- **Push mode**: An administrator manually sends, or pushes, the configuration to one or more nodes. The LCM makes sure that the state on each node matches what the configuration specifies.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/protect-vm-settings-with-dsc/media/2-push.png">
+
+- **Pull mode**: A pull server holds the configuration information. The LCM on each node polls the pull server at regular intervals, by default every 15 minutes, to get the latest configuration details. These requests are denoted as step 1 in the following diagram. In step 2, the pull server sends the details about any configuration changes back to each node.
+
+In pull mode, each node has to be registered with the pull service.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/protect-vm-settings-with-dsc/media/2-pull.png">
+
+Both modes have advantages:
+- Push mode is easy to set up. It doesn't need its own dedicated infrastructure, and it can run on a laptop. Push mode is helpful to test the functionality of DSC. You could also use push mode to get a newly imaged machien to the baseline desired state.
+- Pull mode is useful in an enterprise deployment that spans a large number of machines. The LCM regularly polls the pull server and makes sure the nodes are in the desired state. If an external tool or team applies hotfixes that result in configuration drift on individual machines, those machiens are quickly brought back in line with the configuration you've set. This process can help you achieve a state of continuous compliance for your security and regulatory obligations.
+
+## Knowledge check
+1. What is Azure State Configuration? -> A service used to write, manage, and compile PowerShell Desired State Configurations (DSC), import DSC resources, and assign configurations to target nodes.
+2. A PowerShell DSC script -> Describes the desired state
+3. Why should you use pull mode instead of push mode for DSC? -> Pull mode is easy to set up and doesn't need its own dedicated infrastructure.
+
+<hr>
+
+## Use PowerShell DSC to achieve a desired state
+Windows Server has a set of built-in PowerShell DSC resources. You can view these resources by running the `Get-DSCResource` PowerShell cmdlet.
+
+        Get-DscResource | select Name,Module,Properties
+
+For more complex resources, like Active Directory integration, use the DSC Resource Kit, which is updated monthly. The resource you want to configure must already be a part of the VM or part of the VM image. Otherwise, the job will fail to compile and run.
+
+## Anatomy of a DSC code block
+A DSC code block contains four sections. 
+
+        Configuration MyDscConfiguration {              ##1
+                Node "localhost" {                          ##2
+                        WindowsFeature MyFeatureInstance {      ##3
+                                Ensure = 'Present'
+                                Name = 'Web-Server'
+                        }
+                }
+        }
+        MyDscConfiguration -OutputPath C:\temp\         ##4
+
+1. **Configuration**: The configuration block is the outermost script block. It starts with the `Configuration` keyword, and you provide a name. Here, the name of the configuration is `MyDscConfiguration`.
+
+The configuration block describes the desired configuration. Think of a configuration block like a function, except it contains a description of the resources to install rather than the code to install them.
+
+Like a PowerShell function, a configuration block can take parameters. For example, you could parameterize the node name.
+
+        Configuration MyDscConfiguration {
+        param
+        (
+                [string] $ComputerName='localhost'
+        )
+
+        Node $ComputerName {
+        ...
+        }
+
+2. **Node**: You can have one or more node blocks. The node block determines the names of .mof files that are generated when you compile the configuration. For example, the node named `localhost` generates only one *localhost.mof* file. But you can send that .mof file to any server. You generate multiple .mof files when you use multiple node names.
+
+Use the array notation in the node block to target multiple hosts:
+
+        Node @('WEBSERVER1', 'WEBSERVER2', 'WEBSERVER3')
+
+3. **Resource**: One ore more resource blocks can specify the resources to configure. In this case, a single resource block references the `WindowsFeature` resource. The `WindowsFeature` resource here ensure that the Windows feature `Web-Server` is installed.
+
+4. **MyDscConfiguration**: This call invokes the `MyDscConfiguration` block. It's like running a function. When you run a configuration block, it's compiled into a Manged Object Format (MOF) document. MOF is a compiled language created by Desktop Management Task Force, and it's based on interface definition language.
+
+For every node listed in the DSC script, a .mof file is created in the folder you specified with the `-OutputPath` parameter.
+
+## Configuration data in a DSC script
+In a configuration data block, you can provide data that the configuration process might need. You apply this data to named nodes, or you apply it globally across all nodes.
+
+A configuration data block is a named block that contains an array of nodes. The array must be named `AllNodes`. Inside the `AllNodes` array, you specify the data for a node by using the `NodeName` variable.
+
+Using the previous scenario, let's say that on the web server that's installed on each node, you want to set the `SiteName` property to different values. You could define a configuration data block like this:
+
+        $datablock =
+        @{
+                AllNodes =
+                @(
+                        @{
+                        NodeName = "WEBSERVER1"
+                        SiteName = "WEBSERVER1-Site"
+                        },
+                        @{
+                        NodeName = "WEBSERVER2"
+                        SiteName = "WEBSERVER2-Site"
+                        },
+                        @{
+                        NodeName = "WEBSERVER3"
+                        SiteName = "WEBSERVER3-Site"
+                        }
+                );
+        }
+
+If you want to set a property to the same value in each node, in the `AllNodes` array, specify `NodeName ="*"`.
+
+## Secure credentials in DSC script
+A DSC script might require credential information for the configuration process. Avoid putting a credential in plaintext in your source code management tool. Instead, DSC configurations in Azure Automation can reference credentials stored in a `PSCredential` type. Before running the script, get the credentials for the user, use the credentials to create a new `PSCredential` object, and pass this object into the script as a parameter.
+
+Credentials aren't encrypted in .mof files by default. They're exposed as plaintext. To encrypt credentials, use a certificate in your configuration data. The certificate's private key need to be on the node on which you want to apply the configuration. Certificates are configured through the node's LCM.
+
+Starting in PowerShell 5.1, .mof files on the node are encrypted at rest. In transit, all credentials are encrypted through WinRM.
+
+## Push the configuration to a node
+After you create a compiled .mof file for a configuration, you can push it to a node by running the `Start-DscConfiguration` cmdlet. If you add the path to the directory, it applies any .mof file it finds in that directory to the node:
+
+        Start-DscConfiguration -path D:\
+
+This step corresponds to *push mode*, which you learned about the previous unit.
+
+## Pull the configuration for nodes
+If you have hundreds of VMs on Azure, pull mode is more appropriate than push mode.
+
+You can configure an Azure Automation account to act as a pull service. Just upload the configuration to the Automation account. Then register your VMs with this account.
+
+Before you compile your configuration, import into your Automation account any PowerShell modules the DSC process needs. These modules define how to complete the task to achieve the desired state.
+
+<hr>
+
+## Configure virtual machines
+You will learn to configure virtual machines including sizing, storage, and connections.
+
+## Objectives
+- Create a virtual machine planning checklist.
+- Determine virtual machine locations and pricing models.
+- Determine the correct virtual machine size.
+- Configure virtual machine storage.
+
+<hr>
+
+## Review cloud services responsibilities
+VMs are part of the Infrastructure as a Service (IaaS) offering. IaaS is an instant computing infrastructure, provisioned and managed over the Internet. Quickly scale up or down with demand and pay only for what you use.
+
+<hr>
+
+## Plan virtual machines
+Provisioning VMs to Azure requires planning.
+- Start with the network
+- Name the VM
+- Decide the location for the VM
+- Determine the size of the VM
+- Understanding the pricing model
+- Storage for the VM
+- Select and operating system
+
+## Start with the network
+Virtual networks (VNets) are used in Azure to provide private connectivity between Azure Virtual Machines and other Azure services. VMs and services that are part of the same virtual network can access one another. By default, services outside the virtual network cannot connect to services within the virtual network. You can, however, configure the network to allow access to the external service, including your on-premises servers.
+
+This latter point is why you should spend some time thinking about your network configuration. Network addresses and subnets are not trivial to change once you have them set up, and if you plan to connect your private company network to the Azure services, you will want to make sure you consider the topology before putting any VMs into place.
+
+## Name the VM
+The VM name is used as the computer name, which is configured as part of the operating system. You can specify a name of up to 15 characters on Windows VM and 64 characters on a Linux VM.
+
+This name also defines a manageable Azure resource, and it's not trivial to change later. A good convention is to include the following information in the name:
+- Environment: Environment of the resource (dev, prod, QA)
+- Location: Identifies the region into which the resource is deployed (uw - US West, ue (US East))
+- Instance: For resources that have more than one named instance (01, 02)
+- Product or Service: Identifies the product, application, or service that the resource supports
+- Role: The role of the associated resource (sql, web, messaging)
+
+For example, `devusc-webvm01` might represent the first development web server hosted in the US South Central location.
+
+## Bastion connections
+The Azure Bastion service is a new fully platform-managed PaaS service that you provision inside your virtual network. It provides secure and seamless RDP/SSH connectivity to your virtual machines directly in the Azure portal over SSL. When you connect via Azure Bastion, your VMs do not need a public IP address.
+
+<hr>
+
+## Knowledge check
+1. Which workload option should be selected to run a network appliance on a virtual machine? -> Compute optimized
+2. An organization has a security policy that prohibits exposing SSH ports to the outside world. What is the best way to connect to the Azure Linux VMs and install software? -> Configure the Bastion service.
+3. What is the effect of the default network security settings for a new VM? -> Outbound request is allowed. Inbound traffic is only allowed from within the virtual network.
+
+<hr>
+
+## Configure network security groups
+You will learn how to implement network security groups and ensure network security group rules are correctly applied.
+
+## Objectives
+- Determine when to use network security groups.
+- Implement network security group rules.
+- Evaluate network security group effective rules.
+
+<hr>
+
+## Implement network security groups
+You can limit network traffic to resources in a virtual network using a network security group (NSG). A network security group contains a list of security rules that allow or deny inbound or outbound network traffic. An NSG can be associated to a subnet or a network interface. A NSG can be associated multiple times.
+
+## Subnets
+You can assign NSGs to subnets and create protected screened subnets (also called a DMZ). These NSGs can restrict traffic flow to all the machines that reside within that subnet. Each subnet can have zero, or one, associated NSGs.
+
+## Network interfaces
+You can assign NSGs to a NIC so that all the traffic that flows through that NIC is controlled by NSG rules. Each network interface that exists in a subnet can have zero, or one, associated network security groups.
+
+## Associations
+When you create an NSG the Overview blade provides information about the NSG such as, associated subnets, associated network interfaces, and security rules.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-network-security-groups/media/network-security-groups-1ebf7bed.png">
+
+<hr>
+
+## Application security group constraints
+- There are limits to the number of ASGs you can have in a subscription, in addition to other limits related to ASGs.
+- You can specify one ASG as the source and destination in a security role. You cannot specify multiple ASGs in the source or destination.
+- All network interfaces assigned to an ASG must exist in the same virtual network that the first nework interface assigned to the ASG is in. For example, if the first network interface assigned to an ASG named AsgWeb is in the virtual network named VNet1, then all subsequent network interfaces assigned to ASGWeb must exist in VNet1. You cannot add network interfaces from different virtual networks to the same ASG.
+- If you specify an ASG as the source and destination in a security rule, the network interfaces in both ASGs must exist in the same virtual network. For example, if AsgLogic contained network interfaces from VNet1, and AsgDb contained network interfaces from VNet2, you could not assign AsgLogic as the source and AsgDb as the destination in a rule. All network interfaces for both the source and destination ASGs need to exist in the same virtual network.
+
+<hr>
+
+## Knowledge check
+1. The infrastructure team has two NSG security rules for inbound traffic to the backend web servers. There is an allow rule with a priority rule of 200. And, there is a deny rule with a priority of 150. Which rule will take precedence? -> The deny rule takes precedence (lower the number the higher the priority)
+2. What is one of the default inbound security rules? -> Allow inbound coming from any VM to any other VM within the virtual network.
+3. Which of the following is a valid service tag for network security group rules? -> VirtualNetwork. (Service tags represent a group of IP addresses. Other services tags are Internet, SQL, Storage, AzureLoadBalancer, and AzureTrafficManager).
+
+<hr>
+
+## Configure Azure Firewall
+You will learn how to configure the Azure Firewall including firewall rules.
+
+## Objectives
+- Determine when to use Azure Firewall.
+- Implement Azure Firewall including firewall rules.
+
+<hr>
+
+## Determine Azure Firewall uses
+Azure Firewall is a managed, cloud-based network security service that protects your Azure Virtual Network resources. It's a fully stateful firewall as a service with built-in high availability and unrestricted cloud scalability. You can centrally create, enforce, and log application and network connectivity policies across subscriptions and virtual networks.
+
+Azure Firewall uses a static public IP address for your network resources allowing outsite firewalls to identify traffic originating from your virtual network. The service is fully integarated with Azure Monitor for logging and analytics.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-firewall/media/firewall-threat-8a2c65f9.png">
+
+## Azure Firewall feaures
+- **Built-in high availability**: Additional load balancers aren't required. There's nothing you need to configure.
+- **Availability Zones**: Azure Firewall can be configured during deployment to span multiple Availability Zones for increased availability.
+- **Unrestricted cloud scalability**: Azure Firewall can scale up as much as you need to accommodate changing network traffic flows, so you don't need to budget for your peak traffic.
+- **Application FQND filtering rules**: You can limit outbound HTTP/S traffic or Azure SQL traffic to a specified list of fully qualified domain names (FQDN) including wildcards.
+- **Network traffic filtering rules**: You can centrally create allow or deny network filtering rules by source and destination IP address, port, and protocol. Azure Firewall is fully stateful, so it can distinguish legitimate packets for different types of connections. Rules are enforced and logged across multiple subscriptions and virtual networks.
+- **Threat intelligence**: Threat intelligence-based filtering can be enabled for your firewall to alert and deny traffic from/to known malicious IP addresses and domains. The IP addresses and domains are sourced from the Microsoft Threat Intelligence feed.
+- **Multiple public IP addresses**: You can assocaite multiple public IP addresses with your firewall.
+
+<hr>
+
+## Create Azure Firewalls
+It's recommended to use a hub-spoke network topology when deploying a firewall.
+
+- The *hub* is a virtual network in Azure that acts as a central point of connectivity to your on-premises network.
+- The *spokes* are virtual networks that peer with the hub, and can be used to isolate workloads.
+- Traffic flows between the on-premises datacenter and the hub through an ExpressRoute or VPN gateway connection.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-firewall/media/firewall-tasks-7b6dbe0f.png">
+
+The benefits of this topology include:
+- Cost savings by centralizing services that can be shared by multiple workloads, such as network virtual appliances (NVAs) and DNS servers, in a single location.
+- Overcome subscriptions limits by peering virtual networks from different subscriptions to the central hub.
+- Separation of concerns between central IT (SecOps, InfraOps) and workloads (DevOps).
+
+Typical uses for a hub-spoke network architecture include:
+- Workloads in different environments that require shared services. For example, development and testing environments that require DNS. Shared services are placed in a hub virtual network. Each environment is deployed to a spoke to maintain isolation.
+- Workloads that don't require connectivity to each other, but require access to shared services.
+- Enterprises that require central control over security aspects. For example, a firewall in the hub and workloads in each spoke.
+
+<hr>
+
+## Create firewall rules
+There are three kinds of rules that you can configure in the Azure Firewall. Remember, by default, Azure Firewall blocks all traffic, unless you enable it.
+
+## NAT rules
+You can configure Azure Firewall Destination Network Address Translation (DNAT) to translate and filter inbound traffic to your subnets. Each rule in the NAT rule collection is used to translate your firewall public IP and port to a private IP and port. Scenarios where NAT rules might be helpful are publishing SSH, RDP, or non-HTTP/S applications to the internet. A NAT rule that routes traffic must be accompanied by a matching network rule to allow traffic. Configuration settings include:
+
+- **Name**: A label for the rule.
+- **Protocol**: TCP or UDP.
+- **Source Address**: (Internet), a specific Internet address, or a CIDR block.
+- **Destination Address**: The external address of the firewall that the rule will inspect.
+- **Destination Ports**: The TCP or UDP ports that the rule will listen to on the external IP address of the firewall.
+- **Translated Address**: The IP address of the service (virtual machine, internal load balancer, and so on) that privately hosts or presents the service.
+- **Translated Port**: The port that the inbound traffic will be routed to by the Azure Firewall.
+
+## Network rules
+Any non-HTTP/S traffic that will be allowed to flow through the firwall must have a network rule. For example, if resources in one subnet must communicate with resources in another subnet, then you would configure a network rule from the source to the destination. Configuration settings include:
+
+- **Name**: A friendly label for the rule.
+- **Protocol**: TCP, UDP, ICMP (ping and traceroute) or Any.
+- **Source Address**: The address or CIDR block of the source.
+- **Destination Addresses**: The addresses or CIDR of the destination(s).
+- **Destination Ports**: The destination port of the traffic.
+
+## Application rules
+Application rules define fully qualified domain names (FQDNs) that can be accessed from a subnet. For example, specify the Windows Update network traffic through the firewall. Configuration settings include:
+
+- **Name**: A friendly label for the rule.
+- **Source Addresses**: The IP address of the source.
+- **Protocol: Port**: HTTP/HTTPS and the port that the web server is listening on.
+- **Target FQDNs**: The domain name of the service, such as www.consoso.com. Wildcards can be used. An FQDN tag represents a group of FQDNs associated with well known Microsoft services. Example FQDNs tags include Windows Update, App Service Environment, and Azure Backup.
+
+## Rule processing
+When a packet is being inspected to determine if it is allowed or not, the rules are processed in this order:
+1. Network Rules
+2. Application Rules (network and application)
+
+<hr>
+
+## Knowledge check
+1. Suppose a company wants to allow access to an Azure SQL Database instance using a FQDN address. What network rule type should they use to configure Azure firwall? -> Application (defines FQDN)
+2. Suppose a company wants to allow external users to access an Azure virtual server with a remote desktop connection. What item would be implemented on the Azure firewall to allow these connections? ->  Destination network address translation
+3. What describes the Azure firewall IP address? -> The firewall has a statically assigned public IP address.
+
+<hr>
+
+## Configure Azure DNS
+You will learn how to configure Azure DNS including custom domain names and record sets.
+
+## Objectives
+- Identify features and usage cases for domains, custom domains, and private zones.
+- Verify custom domain names using DNS records.
+- Implement DNS zones, DNS delegation, and DNS record sets.
+
+Azure DNS enables you to host your DNS records for your domains on Azure infrastructure. With Azure DNS, you can use the same credentials, APIs, tools, and billing as your other Azure services.
+
+You company obtains a custom domain name for a new website. You need to use Azure DNS to manage this domain.
+
+<hr>
+
+## Custom domain name
+The initial domain name can't be changed or deleted. You can however add a routable custom domain name you control. A custom domain name simplifies the user sign-on experience. Users can use credentials they are familiar with. For example, contosogold.onmicrosoft.com, could be assigned to contosogold.com
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-dns/media/custom-domain-names-8dae9b45.png">
+
+## Practical information about domain names
+- You must be a global administrator to perform domain management tasks. The global administrator is the user who created the subscription.
+- Domain names in Azure AD are globally unique. When on Azure AD directory has verified a domain name, other directories can't use that name.
+- Before a custom domain name can be used by Azure AD, the custom domain name must be added to your directory and verified.
+
+<hr>
+
+## Verify custom domain names
+When an administrator adds a custom domain name to an Azure AD, it is initially in an unverified state. Azure AD won't allow any directory resources to use an unverified domain name. Only one directory can use a domain name, the organization that owns the domain name.
+
+After adding the custom domain name, you must verify ownership of the domain name. Verification is performed by adding a DNS record. The DNS record could be MX or TXT. Once the DNS record is added, Azure will query the DNS domain for the presence of the record. This could take several minutes or several hours. When Azure verifies the presence of the DNS record, it will then add the domain name to the subscription.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-dns/media/verify-custom-domain-2a02fdb3.png">
+
+<hr>
+
+## Create Azure DNS zones
+Azure DNS provides a reliable, secure DNS service to manage and resolve domain names in a virtual network without needing to add a custom DSN solution.
+
+A DNS zone hosts the DNS records for the domain. So, to start hosting your domain in Azure DNS, you need to create a DNS zone for that domain name. Each DNS record for your domain is then created inside this DNS zone.
+
+From the Azure portal, you can easily add a DNS zone. Information for the DNS zone includes name, number of records, resource group, location, subscription, and name servers.
+
+## Considerations
+- The name of the zone must be unique within the resource group, and the zone must not exist already.
+- The same zone name can be reused in a different resource group or a different Azure subscription.
+- Where multiple zones share the same name, each instance is assigned different name server addresses.
+- Root/Parent domain is registered at the registrar and pointed to Azure NS.
+- Child domains are registered in Azure DNS directly.
+
+Note: You do not have to own a domain name to create a DNS zone with that domain name in Azure DNS. However, you do need to own the domain to configure the domain.
+
+<hr>
+
+## Delegate DNS domains
+To delegate your domain to Azure DNS, you first need to know the server names for your zone. Each time a DNS zone is created Azure DNS allocates name servers from a pool. Once the Name Servers are assigned, Azure DNS automatically creates authoritative NS record in your zone.
+
+Note: When you copy each naem server address, make sure you copy the trailing period at the end of the address. The trailing period indicates the end of a fully qualified domain name.
+
+Once the DNS zone is created, and you have the name servers, you need to update the parent domain. Each registrar has their own DNS management tools to change the name server records for a domain. In the registrar's DNS management page, edit the NS records and replace the NS record with the ones Azure DNS created.
+
+Note: When delegating a domain to Azure DNS, you must use the name server names provided by Azure DNS. You should alwasy use all four name server names, regardless of the name of your domain.
+
+## Child domains
+If you want to set up a separate child zone, you can delegate a subdomain in Azure DNS. For example, after configuring contoso.com in Azure DNS, you could configure a separate child zone for partners.contoso.com.
+
+Setting up a subdomain follows the same process as typical delegation. The only difference is that NS records must be created in the parent zone contoso.com in Azure DNS, rather than in the domain registrar.
+
+Note: The parent and child zones can be in the same ore different resource group. Notice that the record set name in the parent zone matches the child zone name, in this case *partners**.
+
+<hr>
+
+## Add DNS record sets
+It's important to understand the difference between DNS record sets and individual DNS records. A record set is a collection of records in a zone that have the same name and are the same type.
+
+A record set cannot contain two identifical records. Empty record sets (with zero records) can be created, but do not appear on the Azure DNS name servers. Record sets of type CNAME can contain one record at most.
+
+The **Add record set** page will change depending on the type of record you select. For an A record, you will need the TTL (Time to Live) and IP address. The time to live, or TTL, specifies how long each record is cached by clients before being requiried.
+
+<hr>
+
+## Plan for private DNS zones
+When using private DNS zones, you can use your own custom domain names rather than the Azure-provided names. Using custom domain names helps you to tailor your virtual network architecture to best suite your organization's needs. It provides name resolution for virtual machines (VMs) within a virtual network and between virtual networks. Additionally, you can configure zones names with a split-horizon view, which allows a private and a public DNS zone to share the name.
+
+The DNS records for the private zone are not viewable or retrievable. But, the DNS records are registered and will resolve successfully.
+
+## Azure private DNS benefits
+- **Removes the need for custom DNS solutions**: You can perform DNS management by using the native Azure infrastructure. This removes the burden of creating an managing custom DNS solutions.
+- **Use all common DNS records types**: Azure DNS supports A, AAAA, CNAME, MX, PTR, SOA, SRV, and TXT records.
+- **Automatic hostname record management**: Along with hosting your custom DNS records, Azure automatically maintains hostname records for the VMs in the specified virtual networks. In this scenario, you can optimize the domain names you use without needing to create custom DNS solutions or modify applications.
+- **Hostname resolution between virtual networks**: Unlike Azure-provided host names, private DNS zones can be shared between virtual networks. This capability simplifies cross-network and service-discovery scenarios, such as virtual network peering.
+- **Familiar tools and user experience**: To reduce the learning curve, this new offering uses well-established Azure DNS tools (PowerShell, Azure Resource Manager templates, and the REST API).
+- **Split-horizon DNS support**: You can create zones with the same name that resolve to different answers from within a virtual network and from the public internet.
+- **Available in all Azure regions**: The Azure DNS priate zones feature is available in all Azure regions in the Azure public cloud.
+
+<hr>
+
+## Knowledge check
+1. Which of the following best summarizes the purpose of Azure DNS? -> Manages and hosts the registered domain and associated records.
+2. What type of DNS record should be created to map one or more IP addresses agains a single domain? -> A or AAAA
+3. Azure Private DNS allows which of the following? -> Lets organizations manage and resolve domain names in a virtual network without adding a custom DNS solution.
+
+<hr>
+
+## Configure virtual network peering
+You will learn to configure a VNet peering connection and address transit and connectivity concerns.
+
+## Objectives
+- Identify usage cases and product features of virtual network peering.
+- Configure gateway transit, connectivity, and service chaining.
+
+<hr>
+
+## Determine virtual network peering uses
+Perhaps the simplest and quickest way to connect your VNets is to use VNet peering. Virtual network peering enables you to seamlessly connect two Azure virtual networks. Once peered, the virtual networks appear as one, for connectivity purposes. There are two types of VNet peering.
+
+- **Regional VNet peering** connects Azure virtual networks in the same region.
+- **Global VNet peering** connects Azure virtual networks in different regions. When creating a global peering, the peered virtual networks can exist in any Azure public cloud region or China cloud regions, but not in Government cloud regions. You can only peer virtual networks in the same region in Azure Government cloud regions.
+
+## Benefits of virtual network peering
+The benefits of using local or global virtual network peering, include:
+
+- **Private**: Network traffic between peered virtual networks is private. Traffic between the virtual networks is kept on the Microsoft backbone network. No public internet, gateways, or encryption is required in the communication between the virtual networks.
+- **Performance**: A low-latency, high-bandwidth connection between resources in different virutal networks.
+- **Communication**: The ability for resources in one virtual network to communicate with resources in a different virtual network, once the virtual networks are peered.
+- **Seamless**: The ability to transfer data across Azure subscriptions, deployment models, and across Azure regions.
+- **No disruption**: No downtime to resources in either virtual network when creating the peering, or after the peering is created.
+
+<hr>
+
+## Determine gateway transit and connectivity
+When virtual networks are peered, you configure a VPN gateway in the peered virtual network as a transit point. In this case, a peered virtual network uses the remote gateway to gain access to other resources. A virtual network can have only one gateway. Gateway transit is supported for both VNet Peering and Global VNet Peering.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-vnet-peering/media/gateway-transit-173a51a0.png">
+
+When you Allow Gateway Transit the virtual network can communicate to resources outside the peering. For example, the subnet gateway could:
+- Use a site-to-site VPN to connect to an on-premises network.
+- Use a VNet-to-VNet connection to another virtual network.
+- Use a point-to-site VPN to connect to a client.
+
+In these scenarios, gateway transit allows peered virtual networks to share the gateway and get access to resources. This means you do not need to deploy a VPN gateway in the peer virtual network.
+
+Note: Network security groups can be applied in either virtual network to block access to other virtual networks or subnets. When configuring virtual network peering, you can either open or close the network security group rules between the virtual networks.
+
+<hr>
+
+## Create virtual network peering
+Here are the steps to configure VNet peering. Notice you will need two virtual networks. To test the peering, you will need a VM in each network. Initially, the VMs will not be able to communicate, but after configuration the communication will work. The step that is new is configuring the peering of the virtual networks.
+
+1. Create two virtual networks.
+2. **Peer the virtual networks**.
+3. Create virtual machines in each virtual network.
+4. Test the communciation between the virtual machines.
+
+To configure the peering use the **Add peering** page. There are only a few optional configuration parameters to consider.
+
+Note: When you add a peering on one virtual network, the second virtual network configuration is automatically added.
+
+<hr>
+
+## Determine service chaining uses
+VNet Peering is nontransitive. When you establish VNet peering between VNet1 and VNet2 and between VNet2 and VNet3, VNet peering capabilities do not apply between VNet1 and VNet3. However, you can configure user-defined routes and service chaining to provide the transitivity. This allows you to:
+- Implement a multi-level hub and spoke architecture.
+- Overcome the limit on the number of VNet peerings per virtual network.
+
+## Hub and spoke architecture
+When you deploy hub-and-spoke networks, the hub virtual network can host infrastructure components like the network virtual appliance or VPN gateway. All the spoke virtual networks can then peer with the hub virtual network. Traffic can flow through network virtual appliances or VPN gateways in the hub virtual network.
+
+## User-defined routes and service chaining
+Virtual network peering enables the next hop in a user-defined route to be the IP address of a VM in the peered virtual network, or a VPN gateway.
+
+Service chaining lets you define user routes. These routes direct traffic from one virtual network to a virtual appliance, or virtual network gateway.
+
+## Checking connectivity
+You can check the status of VNet peering.
+
+- **Initiated**: When you create the peering to the second virtual network form the first virtual network, the peering status is Initiated.
+- **Connected**: When you create the peering from the second virtual network to the first virtual network, its peering status is Connected. When you view the peering status for the first virtual network, you see its status changed from Initiated to Connected. The peering is not successfully established until the peering status for both virtual network peerings is Connected.
+
+<hr>
+
+## Knowledge check
+1. Virtual network peering is successfully established when the peering status of both virtual network peerings shows which status? -> Connected
+2. Which of the following allows peered virtual networks to share the gateway and get access to resources? -> Gateway transit
+3. Which of the following best describes virtual network peering? -> Traffic between the virtual networks is kept on the Microsoft backbone network.
+
+<hr>
+
+## Summary
+Virtual network peering connects virtual networks in a hub and spoke topology. Virtual network peering is cost-effective and easy to configure.
+
+<hr>
+
+## Configure VPN Gateway
+You will learn how to create VPN gateways and securely connect your company sites to Azure.
+
+## Objectives
+- Identify features and usage cases for VPN gateways.
+- Implement high availability scenarios.
+- Configure site-to-site VPN connections using a VPN gateway.
+
+<hr>
+
+## Determine VPN gateway uses
+A VPN gateway is a specific type of virtual network gateway that is used to send encrypted traffic between an Azure virtual network and an on-premises location over the public internet. You can also use a VPN gateway to send encrypted traffic between Azure virtual networks over the Microsoft network.
+
+Each virtual network can have only one VPN gateway. However, you can create multiple connections to the same VPN gateway. When you create multiple connections to the same VPN gateway, all VPN tunnels share the available gateway bandwidth.
+
+- **Site-to-site** connections connect on-premises datacenters to Azure virtual networks
+- **VNet-to-VNet** connections connect Azure virtual networks (custom)
+- **Point-to-site (User VPN)** cnnections connect individual devices to Azure virtual networks
+
+A virtual network gateway is composed of two or more VMs are that are deployed to a specific subnet you create called the gateway subnet. Virtual network gateway VMs contain routing tables and run specific gateway services. These VMs are created when you create the virtual network gateway. You can't configure the VMs that are part of the virtual network gateway.
+
+VPN gateways can be deployed in Azure Availability Zones. Availability zones bring resiliency, scalability, and higher availability to virtual network gateways. Availability Zones physically and logically separates gateways within a region while protecting your on-premises network connectivity to Azure form zone-level failures.
+
+Note: Creating a virtual network gateway can take up to 45 minutes to complete.
+
+<hr>
+
+## Create site-to-site connections
+Here are the high-level steps to create a VNet-to-VNet connection. The on-premises part is only needed when you are configuring Site-to-Site.
+
+**Create VNets and subnets**: Contact your on-premises network administrator to reserve an IP address range for this virtual network.
+
+**Specify the DNS server (optional)**: DNS is not required to create a Site-to-Site connection. However, if you need name resolution for resources that are deployed to your virtual network, you should specify a DNS server in the virtual network configuration.
+
+<hr>
+
+## Create the gateway subnet
+Before creating a virtual network gateway for your virtual network, you first need to create the gateway subnet. The gateway subnet contains the IP addresses that are used by the virtual network gateway. If possible, it's best to create a gateway subnet by using a CIDR block of /28 or /27 to provide enough IP addressses to accommodate future configuration requirements.
+
+When you create your gateway subnet, gateway VMs are deployed to the gateway subnet and configured with the required VPN gateway settings. Never deploy the other resources (for example, additional VMs) to the gateway subnet. The gateway subnet must be named *GatewaySubnet*.
+
+Deploy a gateway in your virtual network by adding a gateway subnet.
+
+<hr>
+
+## Create the VPN gateway
+The VPN gateway settings that you chose are critical to creating a successful connection.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-vpn-gateway/media/create-virtual-gateways-fc2fd022.png">
+
+<hr>
+
+## Determine the VPN gateway type
+When you create the virtual network gateway, you must specify a VPN type. The VPN type that you choose depends on the connection topology that you want to create. For example, a Point-to-Site (P2S) connection requires a Route-based VPN type.
+
+A VPN type can also depend on the hardware that you are using. Site-to-Site (S2S) configurations require a VPN device. Some VPN devices only support a certain VPN type.
+
+- **Route-based VPNs**: Route-based VPNs use *routes* in the IP forwarding or routing table to direct packets into their corresponding tunnel interfaces. The tunnel interfaces then encrypt or decrypt the packets in and out of the tunnels. The policy (or traffic selector) for Route-based VPNs are configured as any-to-any (or wild cards).
+
+- **Policy-based VPNs**: Policy-based VPNs encrypt and direct packets through IPsec tunnels based on the IPsec polices configured with the combinations of address prefixes between your on-premises network and the Azure VNet. The policy (or traffic selector) is defined as an access list in the VPN device configuration. When using a Policy-based VPN keep in mind the following limitations:
+- Policy-Based VPNs can only be used on the Basic gateway SKU and is not compatible with other gateway SKUs.
+- You can have only one tunnel when using a Policy-based VPN.
+- You can only use Policy-based VPNs for S2S connections, and only for certain configurations. Most VPN Gateway configurations require a Route-based VPN.
+
+Note: Once a virtual network gateway has been created, you can't change the VPN type.
+
+<hr>
+
+## Create the local network gateway
+The local network gateway typically refers to the on-premises location. You give the site a name by which Azure can refer to it, then specify the IP address to FQDN of the on-premises VPN device for the connection. You also specify the IP address prefixes that will be routed through the VPN gateway to the VPN device. The address prefixes you specify are the prefixes located in the on-premises network.
+
+<hr>
+
+## Set up the on-premises VPN gateway
+There is a validated list of standard VPN devices that work well with the VPN gateway. This list was created in partnership with device manufacturers like Cisco, Juniper, Ubiquiti, and Barracuda Networks.
+
+When you device is not listed in the validated VPN devices table, the device may still work. Contact your device manufacturer for support and configuration instructions.
+
+To configure your VPN device, you will need:
+- **A shared key**: The same shared key that you specify when creating the VPN connection.
+- **The public IP address of your VPN gateway**: The IP address can be new or existing.
+
+Note: Depending on the VPN device that you have, you may be able to download a VPN device configuration script.
+
+<hr>
+
+## Create the VPN connection
+Once your VPN gateways are created, you can create the connection between them. If your VNets are in the same subscription, you can use the portal.
+
+## Verify the VPN connection
+After you have configured all the Site-to-Site components, it is time to verify that everything is working. You can verify the connections either in the portal or by using PowerShell.
+
+<hr>
+
+## Determine high availability scenarios
+
+## Active/standby
+Every Azure VPN gateway consists of two instances in an active-standby configuration. For any planned maintenance or unplanned disruption that happens to the active instance, the standby instance would take over (failover) automatically, and resume the S2S VPN or VNet-to-VNet connections. The switch over will cause a brief interruption. For planned maintenance, the connectivity should be restored within 10 to 15 seconds. For unplanned issues, the connection recovery will be longer, about 1 minute to 1 and a half minutes in the worst case. For P2S VPN client connections to the gateway, the P2S connections will be disconnected and the users will need to reconnect from the client machines.
+
+## Active/active
+You can now create an Azure VPN gateway in an active-active configuration, where both instances of the gateway VMs will establish S2S VPN tunnels to your on-premises VPN device.
+
+In this configuration, each Azure gateway instance will have a unique public IP address, and each will establish an IPsec/IKE S2S VPN tunnel to your on-premises VPN device specified in your local network gateway and connection. Both VPN tunnels are actually part of the same connection. You will still need to configure your on-premises VPN device to accept or establish two S2S VPN tunnels to those two Azure VPN gateway public IP addresses.
+
+When in active-active configuration, the traffic from your Azure virtual network to your on-premises network will be routed through both tunnels simultaneously. The same TCP or UDP flow will always traverse the same tunnel or path, unless a maintenance event happens on one of the instances.
+
+When a planned maintenance or unplanned event happens to one gateway instance, the IPsec tunnel from that instance to your on-premises VPN device will be disconnected. The corresponding routes on your VPN devices should be removed or withdrawn automatically so that the traffic will be switched over to the other active IPsec tunnel. On the Azure side, the switch over will happen automatically from the affected instance to the active instance.
+
+<hr>
+
+## Knowledge check
+1. The company's VPN gateway must work with ExpressRoute. Which VPN type should be used? -> Route-based (Express**Route**)
+2. The infrastructure team is connecting two virtual networks. Performance is the key concern. What will most influence performance? -> Selecting a route-based VPN. -> Selecting an appropriate Gateway SKU
+3. The infrastructure team needs to configure a site-to-site VPN connection between the on-premises network and the Azure network. The on-premises network uses a Cisco ASA VPN device. What key piece of information will you need to set up the on-premises VPN gateway? -> The shared key provided when the site-to-site VPN connection was created.
+
+<hr>
+
+## Summary
+A VPN gateway is a specific type of virtual network gateway that is used to send encrypted traffic between an Azure virtual network and an on-premises location over the public internet. You can also use a VPN gateway to send encrypted traffic between Azure virtual networks over the Microsoft network.
