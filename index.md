@@ -4375,3 +4375,111 @@ When a planned maintenance or unplanned event happens to one gateway instance, t
 
 ## Summary
 A VPN gateway is a specific type of virtual network gateway that is used to send encrypted traffic between an Azure virtual network and an on-premises location over the public internet. You can also use a VPN gateway to send encrypted traffic between Azure virtual networks over the Microsoft network.
+
+<hr>
+
+## Azure Virtual Network (VNet)
+An Azure Virtual Network (VNet) is a representation of your own network in the cloud. It is a logical isolation of the Azure cloud dedicated to your subscription. You can use VNets to provision and manage virtual private networks (VPNs) in Azure and, optionally, link the VNets with other VNets in Azure, or with your on-premises IT infrastructure to create hybrid or cross-premises solutions. Each VNet you create has its own CIDR block and can be linked to other VNets and on-premises networks if the CIDR blocks do not overlap. You also have control of DNS server settings for VNets, and segmentation of the VNet into subnets.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-networks/media/virtual-networks-c016972b.png">
+
+Virtual networks can be used in many ways.
+
+- **Create a dedicated private cloud-only VNet**: Sometimes you don't require a cross-premises configuration for your solution. When you create a VNet, your services and VMs within your VNet can communicate directly and securely with each other in the cloud. You can still configure endpoint connections for the VMs and services that require internet communication, as part of your solution.
+
+- **Securely extend your data center with VNets**: You can build traditional site-to-site (S2S) VPNs to securely scale your datacenter capacity. S2S VPNs use IPSEC to provide a secure connection between your corporate VPN gateway and Azure.
+
+- **Enable hybrid cloud scenarios**: VNets give you the flexibility to support a range of hybrid cloud scenarios. You can securely connect cloud-based applications to any type of on-premises system such as mainframes and Unix systems.
+
+<hr>
+
+## Create subnets
+A virtual network can be segmented into one or more subnets. Subnets provide logical divisions within your network. Subnets can help improve security, increase performance, and make it easier to manage the network.
+
+Each subnet contains a range of IP addresses that fall within the virtual network address space. The range must be unique within the address space for the virtual network. The range can't overlap with other subnet address ranges with the virtual network. The address space must be specified by using Classless Inter-Domain Routing (CIDR) notation.
+
+## Considerations
+- **Service requirements**: Each service directly deployed into virtual network has specific requirements for routing and the types of traffic that must be allowed into and out of subnets. A service may require, or create, their own subnet, so there must be enough unallocated space for them to do so. For example, if you connect a virtual network to an on-premises network using an Azure VPN Gateway, the virtual network must have a dedicated subnet for the gateway.
+
+- **Virtual appliances**: Azure routes network traffic between all subnets in a virtual network, by default. You can override Azure's default routing to prevent Azure routing between subnets, or to route traffic between subnets through a network virtual appliance. So, if you require that traffic between resoures in the same virtual network flow through a network virtual appliance (NVA), deploy the resources to different subnets.
+
+- **Service endpoints**: You can limit access to Azure resources such as an Azure storage account or Azure SQL database, to specific subnets with a virtual network service endpoint. Further, you can deny access to the resources from the internet. You may create multiple subnets, and enable a service endpoint for some subnets, but not others.
+
+- **Network security groups**: You can associate zero or one network security group to each subnet in a virtual network. You can associate the same, or a different, network security group to each subnet. Each network security group contains rules, which allow or deny traffic to and from sources and destinations.
+
+- **Private Links**: Azure Private Link provides private connectivity from a virtual network to Azure platform as a service (PaaS), customer-owned, or Microsoft partner services. It simplifies the network architecture and secures the connection between endpoints in Azure by eliminating data exposure to the public internet.
+
+**Note**: There are restrictions on using IP addresses. Azure reserves five IP addresses with each subnet.
+
+<hr>
+
+## Create virtual networks
+You can create new virtual networks at any time. You can also add virtual networks when you create a virtual machine. Either way you will need to define the address space, and at least one subnet.
+
+<hr>
+
+## Plan IP addressing
+You can assign IP addresses to Azure resources to communicate with other Azure resources, your on-premises network, and the internet. There are two types of Azure IP addresses: public and private IP addresses.
+
+- **Private IP addresses**: Used for communication with an Azure virtual network (VNet), and your on-premises network, when you use a VPN gateway or ExpressRoute circuit to extend your network to Azure.
+- **Public IP addresses**: Used for communication with the internet, including Azure public-facing services.
+
+Note: IP Addresses are never managed form within a virtual machine.
+
+## Static vs dynamic addressing
+IP addresses can also be statically assigned or dynamically assigned. Static IP addresses do not change and are best for certain situations such as:
+- DNS name resolution, where a change in the IP address would require updating host records.
+- IP address-based security models that require apps or services to have a static IP address.
+- TLS/SSL certificates linked to an IP address.
+- Firewall rules that allow or deny traffic using IP address ranges.
+- Role-based VMs such as Domain Controllers and DNS servers.
+
+Note: You may decide to separate dynamically and statically assigned IP resources into different subnets.
+
+<hr>
+
+## Create public IP addressing
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-virtual-networks/media/create-public-ip-address-f07bd67c.png">
+
+**IP Version**: Select IPv4 or IPv6 or Both. Selecting Both will result in two Public IP addresses being created- one IPv4 address and one IPv6 address.
+
+**SKU**: A Public IP's SKU must match the SKU of the Load Balancer with which it is used.
+
+**Name**: The name must be unique within the resource group you select.
+
+**IP address assignment**: There are two types of IP address assignments.
+
+- **Dynamic**: Dynamic addresses are assigned only after a public IP address is associated to an Azure resource, and the resource is started for the first time. Dynamic addresses can change if they're assigned to a resource, such as a virtual machine, and the virtual machine is stopped (deallocated), and then restarted. The address remains the same if a virtual machine is rebooted or stopped (but not deallocated). Dynamic addresses are released when a public IP address resource is dissociated from a resource.
+
+- **Static**: Static addresses are assigned when a public IP address is created. Static addresses aren't released until a public IP address resource is deleted. If the address isn't associated to a resource, you can change the assignment method after the address is created. If the address is associated to a resource, you may not be able to change the assignment method. If you select IPv6 for the IP version, the assignment method must be Dynamic for Basic SKU. Standard SKU addresses are Static for both IPv4 and IPv6.
+
+<hr>
+
+## Associate public IP addresses
+A public IP address resource can be associated with virtual machine network interfaces, internet-facing load balancers, VPN gateways, and application gateways.
+
+## Address SKUs
+When you create a public IP address, you are given a SKU choice of either **Basic** or **Standard**. Your SKU choice affects the IP assignment method, security, available resources, and redundancy.
+
+<hr>
+
+## Associate private IP addresses
+A private IP address resource can be associated with virtual machine network interfaces, internal load balancers, and application gateways. Azure can provide an IP address (dynamic assignment) or you can assign the IP address (static assignment).
+
+A private IP address is allocated from the address range of the virtual network subnet a resource is deployed in.
+- **Dynamic**: Azure assigns the next available unassigned or unreserved IP address in the subnet's address range. For example, Azure assigns 10.0.0.10 to a new resource, if addresses 10.0.0.4-10.0.0.9 are already assigned to other resources. Dynamic is the default allocation method.
+-- **Static**: You select and assign any unassigned or unreserved IP address in the subnet's address range. For example, if a subnet's address range is 10.0.0.0/16 and addresses 10.0.0.0.4-10.0.0.0.9 are already assigned to other resources, you can assign any address between 10.0.0.10 - 10.0.255.254.
+
+<hr>
+
+## Knowledge check
+1. When assigning private IPv4 addresses in a subnet with the address range 10.3.0.0/16, which of the following addresses are available for assignment dynamically? -> 10.3.255.254
+2. The infrastructure team has implemented firewall rules to deny traffic based on IP address ranges. Which of the following should be used to meet the requirement? ->  Statically assigned IP addresses.
+3. Which of the following resources could have a public IP address? -> Virtual Machine.
+
+<hr>
+
+## Summary and resources
+Azure Virtual Network is the fundamental building block for your private network in Azure. VNet enables many types of Azure resources, such as Azure Virtual Machines, to securely communicate with each other, the internet, and on-premises networks. VNet is similar to a traditional network that you'd operate in your own data center, but brings with it additional benefits of Azure's infrastructure such as scale, availability, and isolation.
+
+Azure IP addressing is critical to ensuring resources are accessible. Private IP addresses to communicate between resources in Azure. Public IP addresses enable Azure resources to be accessible directly from the internet.
