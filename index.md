@@ -4597,3 +4597,86 @@ There are two types of virtual WANs: Basic and Standard.
 Azure ExpressRoute can be used to connect your on-premises networks to the Microsoft cloud infrastructure. ExpressRoute works with an approved connectivity provider to establish the connections via a dedicated circuit.
 
 Azure Virtual WAN can also be used to establish network connections. Azure Virtual WAN provides any-to-any connectivity, custom routing, and security.
+
+<hr>
+
+## Review system routes
+Azure uses **system routes** to direct network traffic between virtual machines, on-premises networks, and the internet. The following situations are managed by these system routes:
+
+- Traffic between VMs in the same subnet.
+- Between VMs in different subnets in the same virtual network.
+- Data flow from VMs to the internet.
+
+For example, consider this virtual network with two subnets. Communication between the subnets and from the frontend to the internet are all managed by Azure using the default system routes.
+
+Note: Information about the system routes is recorded in a route table. A route table contains a set of rules, called routes, that specifies how packets should be routed in a virtual network. Routing tables are associated to subnets, and each packet leaving a subnet is handled based on the associated route table. Packets are matched to routes using the destination. The destination can be an IP address, a virtual network gateway, a virtual appliance, or the internet. If a matching route can't be found, then the packet is dropped.
+
+<hr>
+
+## Identify user-defined routes
+Azure automatically handles all network traffic routing. But, what if you want to do something different? For example, you may have a VM that performs a network function, such as routing, firewalling, or WAN optimization. You may want certain subnet traffic to be directed to this virtual appliance. For example, you might plance an appliance between subnets or a subnet and the internet.
+
+In these situations, you can configure user-defined routes (UDRs). UDRs control network traffic by defining routes that specify the next hop of the traffic flow. The hop can be a virtual network gateway, virtual network, internet, or virtual appliance. 
+
+Each route table can be associated to multiple subnets, but a subnet can only be associated to a single route table.
+
+There are no charges for creating route tables in Microsoft Azure.
+
+## Determine service endpoint issues
+A virtual network service endpoint provides the identity of your virtual network to the Azure service. Once service endpoints are enabled in your virtual network, you can secure Azure service resources to your virtual network by adding a virtual network rule to the resources.
+
+Today, Azure service traffic from a virtual network uses public IP addresses as source IP addresses. With service endpoints, service traffic switches to use virtual network private addresses as the source IP addresses when accessing the Azure service from a virtual network. This switch allows you to access the services without the need for reserved, public IP addresses used in IP firewalls.
+
+## Why use a service endpoint?
+- **Improved security for your Azure service resources**: VNet private address spaces can be overlapping and so, cannot be used to uniquely identify traffic originating from your VNet. Service endpoints secure Azure service resources to your virtual network by extending VNet identity to the service. When service endpoints are enabled in your virtual network, you secure Azure service resources to your virtual network by adding a virtual network rule. The rule improves security by fulling removing public internet access to resources, and allowing traffic only from your virtual network.
+
+- **Optimal routing for Azure service traffic from your virtual network**: Today, any routes in your virtual network that force internet traffic to your premises and/or virtual appliances, known as force-tunneling, also force Azure service traffic to take the same route as the internet traffic. Service endpoints provide optimal routing for Azure traffic.
+
+- **Endpoints always take service traffic directly from your virtual network to the service on the Microsoft Azure backbone network**: Keeping traffice on the Azure backbone network allows you to continue auditing and monitoring outbound internet traffic from your virtual networks, through forced-tunneling without impacting service traffic.
+
+- **Simple to set up with less management overhead**: You no longer need reserved, public IP addresses in your virtual networks to secure Azure resources through IP firewall. There are no NAT or gateway devices required to set up the service endpoints. Service endpoints are configured through the subnet. There is no additional overhead to maintaining the endpoints.
+
+Note: With service endpoints, the virtual machine IP addresses switches from public to private IPv4 addresses. Existing Azure service firewall rules using Azure public IP addresses will stop working with this switch. Ensure Azure service firewall rules allow for this switch before setting up service endpoints. You may experience temporary interruption to service traffic from this subnet while configuring service endpoints.
+
+<hr>
+
+## Determine service endpoint services
+It is easy to add a service endpoint to the virtual network. Several services are available including: Azure Active Directory, Azure Cosmos DB, EventHub, KeyVault, Service Bus, SQL, and Storage.
+
+**Azure Storage**: Generally available in all Azure regions. This endpoint gives traffic an optimal route to the Azure Storage service. Each storage account supports up to 100 virtual network rules.
+
+**Azure SQL Database and Azure SQL Data Warehouse**: Generally available in all Azure regions. A firewall security feature that controls whether the database server for your single databases and elastic pool in Azure SQL Database or for your database in SQL Data Warehouse accepts communications that are sent from particular subnets in virtual networks.
+
+**Azure Database for PostgreSQL server and MySQL**: Generally available in Azure regions where database service is available. Virtual Network (VNet) services endpoints and rules extend the private address space of a Virtual Network to your Azure Database for PostgreSQL server and MySQL server.
+
+**Azure Cosmos DB**: Generally available in all Azure regions. You can configure the Azure Cosmos account to allow access only from a specific subnet of virtual network (VNet). By enabling Service endpoint to access Azure Cosmost DB on the subnet within a virtual network, the traffic from that subnet is sent to Azure Cosmos DB with the identity of the subnet and Virtual Network. Once the Azure Cosmos DB service endpoint is enabled, you can limit access to the subnet by adding it to your Azure Cosmos account.
+
+**Azure Key Vault**: Generally available in all Azure regions. The virtual network service endpoints for Azure Key Vault allow you to restrict access to a specified virtual network. The endpoints also allow you to restrict access to a list of IPv4 (internet protocol version 4) address ranges. Any user connecting to your key vault from outside those sources is denied access.
+
+**Azure Service Bus and Azure Event Hub**: Generally available in all Azure regions. The integration of Service Bus with Virtual Network (VNet) service endpoints enables secure access to messaging capabilities fromm workloads like virtual machines that are bound to virtual networks, with the network traffic being secured on both ends.
+
+## Identify private link uses
+Azure Private Link provides private connectivity from a virtual network to Azure platform as a service (PaaS), customer-owned, or Microsoft partner services. It simplifies the network architecture and secures the connection between endpoints in Azure by eliminating data exposure to the public internet.
+
+- **Private connectivity to services on Azure**: Traffic remains on the Microsoft network, with no public internet access. Connect privately to services running in other Azure regions. Private Link is global and has no regional restrictions.
+
+- **Integration with on-premises and peered networks**: Access private endpoints over private peering or VPN tunnels from on-premises or peered virtual networks. Microsoft hosts the traffic, so you don't need to set up public peering or use the internet to migrate your workloads to the cloud.
+
+- **Protection against data exfiltration for Azure resources**: Use Private Link to map private endpoints to Azure PaaS resources. When there is a security incident within your network, only the mapped resource would be accessible, eliminating the threat of data exfiltration.
+
+- **Services delivered directly to your customers' virtual networks**: Privately consume Azure PaaS, Microsoft partner, and your own services in your virtual networks on Azure. Private Link works across Azure Active Directory (Azure AD) tenants to help unify your experience across services. Send, approve, or reject requests directly, without permissions or role-based access controls.
+
+## How it works**
+Use Private Link to bring services delivered on Azure into your private virtual network by mapping it to private endpoint. Or privately deliver your own services in your customers' virtual networks. All traffic to the service can be routed through the private endpoint, so no gateways, NAT devices, ExpressRoute or VPN connections, or public IP addresses are needed. Private Link keeps traffic on the Microsoft global network.
+
+<hr>
+
+## Knowledge check
+1. What statement best describes Azure routing? -> When the next hop type is none, traffic is dropped.
+2. When creating user-defined routes, what is a valid next hop type? -> Internet
+3. A company needs to extend their private address space in Azure by providing a direct connection to Azure resources. What should be implemented? -> Virtual network endpoint.
+
+<hr>
+
+## Summary
+Network routes control the flow of traffic through your network. You can customize these routes, implement service endpoints, and private links.
