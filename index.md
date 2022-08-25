@@ -4483,3 +4483,117 @@ A private IP address is allocated from the address range of the virtual network 
 Azure Virtual Network is the fundamental building block for your private network in Azure. VNet enables many types of Azure resources, such as Azure Virtual Machines, to securely communicate with each other, the internet, and on-premises networks. VNet is similar to a traditional network that you'd operate in your own data center, but brings with it additional benefits of Azure's infrastructure such as scale, availability, and isolation.
 
 Azure IP addressing is critical to ensuring resources are accessible. Private IP addresses to communicate between resources in Azure. Public IP addresses enable Azure resources to be accessible directly from the internet.
+
+<hr>
+
+## Determine ExpressRoute uses
+Azure ExpressRoute lets you extend your on-premises networks into the Microsoft cloud. The connection is facilitated by a connectivity provider. With ExpressRoute, you can establish connections to Microsoft cloud services, such as Microsoft Azure, Microsoft 365, and CRM Online.
+
+## Make your connections fast, reliable, and private
+Use Azure ExpressRoute to create private connections between Azure datacenters and infrastructure on your premises or in a colocation environment. ExpressRoute connections don't go over the public internet, and they offer more reliability, faster speeds, and lower latencies than typical internet connections. In some cases, using ExpressRoute connections to transfer data between on-premises systems and Azure can give you significant cost benefits.
+
+With ExpressRoute, establish connections to Azure at an ExpressRoute location, such as an Exchange provider facility, or directly connect to Azure from your existing WAN network, such as a multiprotocol label switching (MPLS) VPN, provided by a network service provider.
+
+## Use a virtual private cloud for storage, backup, and recovery
+ExpressRoute gives you a fast and reliable connection to Azure with bandwidths up to 100 Gbps. The high connection speeds make it excellent for scenarios like periodic data migration, replication for business continuity, and disaster recovery. ExpressRoute is a cost-effective option for transferring large amounts of data, such as datasets for high-performance computing applications, or moving large virtual machines between your dev-test environments.
+
+## Extend and connect your datacenters
+Use ExpressRoute to connect and add compute and storage capacity to your existing datacenters. With high throughput and low latencies, Azure will feel like a natural extension to or between your datacenters, so you enjoy the scale and economics of the public cloud without having to compromise on network performance.
+
+## Build hybrid applications
+Build applications that span on-premises infrastructure and Azure without compromising privacy or performance. For example, run a corporate intranet application in Azure that authenticates your customers with an on-premises Active Directory service. You serve all of your corporate customers without traffic ever routing through the public internet.
+
+<hr>
+
+## Determine ExpressRoute capabilities
+ExpressRoute is supported across all Azure regions and locations. ExpressRoute locations are where Microsoft peers with several service providers. When you are connected to at least one ExpressRoute location within the geopolitical region, you will access Azure services across all regions within a geopolitical region.
+
+## ExpressRoute benefits
+
+**Layer 3 connectivity**
+Microsoft uses BGP to exchange routes between your on-premises network, your instances in Azure, and Microsoft public addresses. Multiple BGP sessions are created for different traffic profiles.
+
+**Redundancy**
+Each ExpressRoute circuit consists of two connections to two Microsoft Enterprise edge routers (MSEEs) from the connectivity provider/your network edge. Microsoft requires dual BGP connection from the connectivity provider/your network edge - one to each MSEE.
+
+**Connectivity to Microsoft cloud services**
+ExpressRoute connections enable access to Microsoft Azure services, Microsoft 365 services, and Microsoft Dynamics 365. Microsoft 365 was created to be accessed securely and reliably via the internet, so ExpressRoute requires Microsoft authorization.
+
+**Connectivity to all regions within a geopolitical region**
+You connect to Microsoft in one of our peering locations and access regions within the geopolitical region. For example, if you connect to Microsoft in Amsterdam through ExpressRoute, you'll have access to all Microsoft cloud services hosted in Northern and Western Europe.
+
+**Global connectivity with ExpressRoute premium add-on**
+You connect to Microsoft in one of our peering locations and access regions within the geopolitical region. For example, if you connect to Microsoft in Amsterdam through ExpressRoute, you will have access to all Microsoft cloud services hosted in all regions across the world, except national clouds.
+
+**Bandwidth options**
+You purchase ExpressRoute circuits for a wide range of bandwidths. Be sure to check with your connectivity provider to determine the bandwidths they support.
+
+**Flexible billing models**
+You pick a billing model that works best for you.
+
+<hr>
+
+## Coexist site-to-site and ExpressRoute
+ExpressRoute is a direct, private connection from your WAN (not over the public internet) to Microsoft Services, including Azure. Site-to-Site VPN traffic travels encrypted over the public internet. Being able to configure Site-to-Site VPN and ExpressRoute connections for the same virtual network has several advantages.
+
+You configure a Site-to-Site VPN as a secure failover path for ExpressRoute or use Site-to-Site VPNs to connect to sites that are not part of your network, but that are connected through ExpressRoute. Notice this configuration requires two virtual network gateways for the same virtual network, one using the gateway type VPN, and the other using the gateway type ExpressRoute.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-expressroute-virtual-wan/media/coexisting-connections-4af27ce9.png">
+
+## ExpressRoute connection models
+You create a connection between your on-premises network and the Microsoft cloud in three different ways. Colocated at a cloud exchange, Point-to-point Ethernet connection, and any-to-any (IPVPN) connection. Connectivity providers offer one or more connectivity models. You work with your connectivity provider to pick the model that works best for you.
+
+## Colocated at a cloud exchange
+If you are colocated in a facility with a cloud exchange, you order virtual cross-connections to the Microsoft cloud through the colocation provider's Ethernet exchange. Colocation providers offer either Layer 2 cross-connections, or managed Layer 3 cross-connections between your infrastructure in the colocation facility and the Microsoft cloud.
+
+## Point-to-point Ethernet connections
+You connect your on-premises datacenters/offices to the Microsoft cloud through point-to-point Ethernet links. Point-to-point Ethernet providers offer Layer 2 connections, or managed Layer 3 connections between your site and the Microsoft cloud.
+
+## Any-to-any (IPVPN) networks
+You integrate your WAN with the Microsoft cloud. IPVPN providers, typically Multiprotocol Label Switching (MPLS) VPN, offer any-to-any connectivity between your branch offices and datacenters. The Microsoft cloud can be interconnected to your WAN to make it appear just like any other branch office. WAN providers typically offer managed Layer 3 connectivity.
+
+Note: Currently, the deployment options for S2S and ExpressRoute coexisting connections are only possible through PowerShell, and not the Azure portal.
+
+<hr>
+
+## Compare intersite connection options
+There are many intersite connection choices. This table summarizes how to make a selection.
+
+Connection | Azure Services Supported | Bandwidths | Protocols | Typical Use Case
+---------- | ------------------------ | ---------- | --------- | ----------------
+Virtual network, point-to-site | Azure IaaS services, Azure VMs | Based on the gateway SKU | Active/passive | Dev, test, and lab environments for cloud services and virtual machines.
+Virtual network, site-to-site | Azure IaaS services, Azure VMs | Typically < 1 Gbps aggregate | Active/passive, Active/active | Dev, test, and lab environments. Small-scale production workloads, and virtual machines.
+ExpressRoute | Azure IaaS and PaaS services, Microsoft 365 services | 50 Mbps up to 100 Gbps | Active/active | Enterprise-class and mission-critical workloads. Big data solutions
+
+<hr>
+
+## Determine Virtual WAN uses
+Azure Virtual WAN is a networking service that provides optimized and automated branch connectivity to, and through, Azure. Azure regions serve as hubs that you can choose to connect your branches to. You use the Azure backbone to connect branches and enjoy branch-to-VNet connectivity. There is a list of partners that support connectivity automation with Azure Virtual WAN VPN.
+
+Azure Virtual WAN brings together many Azure cloud connectivity services such as site-to-site VPN, User VPN (point-to-site), and ExpressRoute into a single operational interface. Connectivity to Azure VNets is established by using virtual network connections. The global transit network architecture is based on a hub-and-spoke connectivity model. The cloud hosted network 'hub' enables transitive connectivity between endpoints that may be distributed across different types of 'spokes'.
+
+## Virtual WAN advantages
+- **Integrated connectivity solutions in hub and spoke**: Automate site-to-site configuration and connectivity between on-premises sites and an Azure hub.
+- **Automated spoke setup and configuration**: Connect your virtual networks and workloads to the Azure hub seamlessly.
+- **Intuitive troubleshooting**: You can see the end-to-end flow within Azure, and then use this information to take required actions.
+
+## Virtual WAN types
+There are two types of virtual WANs: Basic and Standard.
+
+**Basic**: is a basic hub type, and allows for Site-to-site VPN only.
+
+**Standard** is a standard hub type, and allows for ExpressRoute, User VPN (P2S), VPN (S2S), Inter-hub, and VNet-to-VNet transiting through the virtual hub.
+
+<hr>
+
+## Knowledge check
+1. What is the Azure ExpressRoute service? -> Azure ExpressRoute is a service that provides a direct connection from the on-premises datacenter to the Microsoft cloud.
+2. What Microsoft service helps to simplify a complex hub-and-spoke virtual network WAN deployment? -> Azure Virtual WAN.
+3. When should Azure ExpressRoute be used instead of Azure site-to-site connectivity? -> For handling enterprise-class and mission-critical workloads.
+
+<hr>
+
+## Summary
+Azure ExpressRoute can be used to connect your on-premises networks to the Microsoft cloud infrastructure. ExpressRoute works with an approved connectivity provider to establish the connections via a dedicated circuit.
+
+Azure Virtual WAN can also be used to establish network connections. Azure Virtual WAN provides any-to-any connectivity, custom routing, and security.
