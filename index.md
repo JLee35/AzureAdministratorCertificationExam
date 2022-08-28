@@ -4680,3 +4680,98 @@ Use Private Link to bring services delivered on Azure into your private virtual 
 
 ## Summary
 Network routes control the flow of traffic through your network. You can customize these routes, implement service endpoints, and private links.
+
+<hr>
+
+## Configure Azure Load Balancer
+Many apps need to be resilient to failure and scale easily when demand increases. You can address those needs by using Azure Load Balancer.
+
+## Objectives
+- Identify features and usage cases for Azure load balancer.
+- Implement public and internal Azure load balancers.
+- Configure load balancer SKUs, backend pools, session persistence, and health probes.
+
+<hr>
+
+## Determine Azure load balancer uses
+The Azure Load Balancer delivers high availability and network performance to your applications. The load balancer distributes inbound traffic to backend resources using load-balancing rules and health probes.
+
+- Load-balancing rules determine how traffic is distributed to the backend.
+- Health probes ensure the resources in the backend are healthy.
+
+The Load Balancer can be used for inbound and outbound scenarios and scales up to millions of TCP and UDP application flows.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-load-balancer/media/load-balancer-4caf947b.png">
+
+Note: Keep this diagram in mind since it covers the four components that must be configured for your load balancer: **Frontend IP configuration, Backend pools, Health probes,** and **Load-balancing rules**.
+
+<hr>
+
+## Implement a public load balancer
+There are two types of load balancers: **public** and **internal**.
+
+A public load balancer maps the public IP address and port number of incoming traffic to the private IP address and port of the VM. Mapping is also provided for the response traffic from the VM. By applying load-balancing rules, you can distribute specific types of traffic across multiple VMs or services. For example, you can spread the load of incoming web request traffic across multiple web servers.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-load-balancer/media/public-load-balancer-46d5d9fe.png">
+
+<hr>
+
+## Implement an internal load balancer
+An internal load balancer directs traffic to resources that are inside a virtual network or that use a VPN to access Azure infrastructure. Frontend IP addresses and virtual networks are never directly exposed to an internet endpoint. Internal line-of-business applications run in Azure and are accessed from within Azure or from on-premises resources. For example, an internal load balancer could receive database requests that need to be distributed to backend SQL servers.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-load-balancer/media/internal-load-balancer-5ae85589.png">
+
+An internal load balancer enables the following types of load balancing:
+- **Within a virtual network**: Load balancing from VMs in the virtual network to a set of VMs that reside within the same virtual network.
+- **For a cross-premises virtual network**: Load balancing from on-premises computers to a set of VMs that reside within the same virtual network.
+- **For multi-tier applications**: Load balancing from internet-facing multi-tier applications where the backend tiers are not internet-facing. The backend tiers require traffic load-balancing from the internet-facing tier.
+- **For line-of-business applications**: Load balancing for line-of-business applications that are hosted in Azure without load balancer hardware or software. The scenario includes on-premises servers that are in the set of computer whose traffic is load-balanced.
+
+Note: A public load balancer could be placed in front of the internal load balancer to create a multi-tier application.
+
+<hr>
+
+## Determine load balancer SKUs
+When you create an Azure Load Balancer, you select the type (Internal or Public) of load balancer. You also select the SKU. The load balancer supports both Basic and Standard SKUs, each differing in scenario scale, features, and pricing. The Standard Load Balancer is the newer Load Balancer product with an expanded and more granular feature set over Basic Load Balancer. It is a superset of Basic Load Balancer.
+
+Note: The Basic SKU can be upgraded to the Standard SKU. But, new designs and architectures should use the Standard Load Balancer.
+
+## Create backend pools
+To distribute traffic, a back-end address pool contains the IP addresses of the virtual NICs that are connected to the load balancer. How you configure the backend pool depends on whether you are using the Standard or Basic SKU.
+
+Note: In the Standard SKU, you can have up to 1000 instances in the backend pool. In the Basic SKU, you can have up to 300 instances.
+
+<hr>
+
+## Create load balancer rules
+A load balancer rule defines how traffic is distributed to the backend pool. The rule maps a given frontend IP and port combination to a set of backend IP addresses and port combinations. Before configuring the rule, create the frontend, backend, and health probe.
+
+Load balancing rules can be used in combination with NAT rules. For example, you could use NAT from the load balancer's public address to TCP 3389 on a specific virtual machine. The allows remote desktop access from outside of Azure.
+
+<hr>
+
+## Configure session persistence
+By default, Azure Load Balancer distributes network traffic equally among multiple VM instances. The load balancer uses a five-tuple (source IP, source port, destination IP, destination port, and protocol type) hash to map traffic to available servers. It provides stickiness only with a transport session.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-load-balancer/media/five-tuple-hash-214cf64b.png">
+
+Session persistence specifies how traffic from a client should be handled. The default behavior (None) is that successive requests from a client may be handled by any virtual machine. You can change this behavior.
+
+- **None (default)** specifies any virtual machine can handle the request.
+
+- **Client IP** specifies that successive requests from the same client IP address will be handled by the same virtual machine.
+
+- **Client IP and protocol** specifies that successive requests from the same client IP address and protocol combination will be handled by the same virtual machine.
+
+<hr>
+
+## Create health probes**
+A health probe allows the load balancer to monitor the status of your app. The health probe dynamically adds or removes VMs from the load balancer rotation based on their response to health checks. When a probe fails to response, the load balancer stops sending new connections to the unhealthy instances.
+
+There are two main ways to configure health probes: **HTTP** and **TCP**.
+
+**HTTP custom probe**: The load balancer regularly probes your endpoint (every 15 seconds, by default). The instance is healthy if it responds with an HTTP 200 within the timeout period (default of 31 seconds). Any status other than HTTP 200 causes the probe to fail. You can specify the port (Port), the URI for requesting the health status from the backend (URI), amount of time between probe attempts (Interval), and the number of failures that must occur for the instance to be considered unhealthy (Unhealthy threshold).
+
+**TCP custom probe**: This probe relies on establishing a successful TCP session to a defined probe port. If the specified listener on the VM exists, the probe succeeds. If the connection is refused, the probe fails. You can specify the Port, Internal, and Unhealthy threshold.
+
+Note: There is alos a guest agent probe. This probe uses the guest inside the VM. It is not recommended when HTTP or TCP custom probe configurations are possible.
