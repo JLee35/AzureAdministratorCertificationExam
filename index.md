@@ -4765,7 +4765,7 @@ Session persistence specifies how traffic from a client should be handled. The d
 
 <hr>
 
-## Create health probes**
+## Create health probes
 A health probe allows the load balancer to monitor the status of your app. The health probe dynamically adds or removes VMs from the load balancer rotation based on their response to health checks. When a probe fails to response, the load balancer stops sending new connections to the unhealthy instances.
 
 There are two main ways to configure health probes: **HTTP** and **TCP**.
@@ -4774,4 +4774,101 @@ There are two main ways to configure health probes: **HTTP** and **TCP**.
 
 **TCP custom probe**: This probe relies on establishing a successful TCP session to a defined probe port. If the specified listener on the VM exists, the probe succeeds. If the connection is refused, the probe fails. You can specify the Port, Internal, and Unhealthy threshold.
 
-Note: There is alos a guest agent probe. This probe uses the guest inside the VM. It is not recommended when HTTP or TCP custom probe configurations are possible.
+Note: There is also a guest agent probe. This probe uses the guest inside the VM. It is not recommended when HTTP or TCP custom probe configurations are possible.
+
+<hr>
+
+## Knowledge check
+1. A company provides customers a virtual network in the cloud. There are dozens of Linux virtual machines in another virtual network. Which Azure load balancer shuld be used to direct traffic between the virtual networks? -> An internal load balancer.
+2. What is the default distribution type for traffic through a load balancer? -> Five-tuple hash.
+3. Which configuration is required for an internal load balancer? -> Virtual machines should be in the same virtual network.
+
+<hr>
+
+## Configure Azure Application Gateway
+You will learn how to configure an Azure Application Gateway.
+
+## Objectives
+- Identify features and usage cases for Azure Application Gateway.
+- Implement Azure Application Gateway, including selecting a routing method.
+- Confiugre gateway features such as routing rules.
+
+<hr>
+
+## Implement Application Gateway
+Application Gateway manages the requests that client applications send to a web app.
+
+The Application Gateway uses application layer routing. Application layer routing routes traffic to a pool of web servers based on the URL of the request. The back-end pool can include Azure virtual machines, Azure virtual machine scale sets, Azure App Service, and even on-premises servers.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-application-gateway/media/application-gateway-cb3392f4.png">
+
+The Application Gateway uses round robin to send load balance requests to the servers in each back-end pool. The Application Gateway provides session stickiness. Use session stickiness to ensure client requests in the same session are routed to the same back-end server.
+
+## Additional features
+- Support for the HTTP, HTTPS, HTTP/2 and WebSocket protocols.
+- A web application firewall to protect against web application vulnerabilities.
+- End-to-end request encryption.
+- Autoscaling, to dynamically adjust capacity as your web traffic load change.
+
+<hr>
+
+## Determine Application Gateway routing
+Clients send requests to your web apps to the IP address or DNS name of the gateway. The gateway routes requests to a selected web server in the back-end pool, using a set of rules configured for the gateway to determine where the request should go.
+
+There are two primary methods of routing traffic, path-based routing and multiple site routing.
+
+## Path-based routing
+Path-based routing sends requests with different URL paths to different pools of back-end servers. For example, you can direct requests with the path /video/* to a back-end pool containing servers that are optimized to handle video streaming, and direct /images/* requests to a pool of servers that handle image retrieval.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-application-gateway/media/path-based-routing-15bcef5f.png">
+
+## Multiple site routing
+Multiple site routing configures more than one web application on the same application gateway instance. In a multi-site configuration, you register multiple DNS names (CNAMEs) for the IP address of the Application Gateway, specifying the name of each site. Application Gateway uses separate listeners to wait for requests for each site. Each listener passes the request to a different rule, which can route the requests to servers in a different back-end pool.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/wwl-azure/configure-azure-application-gateway/media/site-based-routing-e686b605.png">
+
+Multi-site configurations are useful for supporting multi-tenant applications, where each tenant has its own set of virtual machines or other resources hosting a web application.
+
+## Other features
+- **Redirection**: Redirection can be used to another site, or from HTTP to HTTPS.
+- **Rewrite HTTP headers**: HTTP headers allow the client and server to pass parameter information with the request or the response.
+- **Custom error pages**: Application Gateway allows you to create custom error pages instead of displaying default error pages. You can use your own branding and layout using a custom error page.
+
+<hr>
+
+## Application Gateway component set up
+Application Gateway has a series of components that combine to route requests to a pool of web servers and to check the health of these web servers.
+
+## Front-end IP address
+Client requests are received through a front-end IP address. You can configure Application Gateway to have a public IP address, a private IP address, or both. Application Gateway can't have more than one public and one private IP address.
+
+## Listeners
+Application Gateway uses one or more listeners to receive incoming requests. A listener accepts traffic arriving on a specified combination of protocol, port, host, and IP address. Each listener routes requests to a back-end pool of servers following routing rules that you specify. A listener can be Basic or Multi-site. A Basic listener only routes a request based on the path in the URL. A Multi-site listener can also route requests using the hostname element of the URL.
+
+Listeners also handle TLS/SSL certificates for securing your application between the user and Application Gateway.
+
+## Routing rules
+A routing rule binds a listener to the back-end pools. A rule specifies how to interpret the hostname and path elements in the URL of a request, and then direct the request to the appropriate back-end pool. A routing rule also has an associated set of HTTP settings. These HTTP settings indicate whether (and how) traffic is encrypted between Application Gateway and the back-end servers. Other configuration information includes Protocol, Session stickiness, Connection draining, Request timeout period, and Health probes.
+
+## Back-end pools
+A back-end pool references a collection of web servers. You provide the IP address of each web server and the port on which it listens for requests when configuring the pool. Each pool can specify a fixed set of virtual machines, a virtual machine scale-set, an app hosted by Azure App Services, or a collection of on-premises servers. Each back-end pool has an associated load balancer that distributes work across the pool.
+
+## Web application firewall
+The web application firewall (WAF) is an optional component that handles incoming requests before they reach a listener. The web application firewall checks each request for many common threats, based on the Open Web Application Security Project (OWASP). Common threats include SQL-injection, Cross-site scripting, Command injection, HTTP request smuggling, HTTP response splitting, Remote file inclusion, Bots, crawlers, and scanners, the HTTP protocol violations and anomalies.
+
+## Health probes
+Health probes determine which servers are available for load-balancing in a back-end pool. The Application Gateway uses a health probe to send a request to a server. When the server returns an HTTP response with a status code between 200 and 399, the server is considered healthy.
+
+If you don't configure a health probe, Application Gateway creates a default probe that waits for 30 seconds before deciding that a server is unavailable.
+
+<hr>
+
+## Knowledge check
+1. Which criteria does Application Gateway use to route requests to a web server? -> The hostname, port, and path in the URL of the request.
+2. Which load balancing strategy does the Application Gateway implement? -> Distributes requests to each available server in the backend pool in turn, round-robin.
+3. The web team is installing the Application Gateway. They want to ensure incoming requests are checked for common security threats like cross-site scripting and crawlers. To address the concerns, what should be done? -> Install Web Application Firewall.
+
+<hr>
+
+## Summary
+The Application Gateway provides load balancing and application routing capabilities across multiple web sites. Several routing methods are available including path-based routing. Also, the Application Gateway includes the Web Application Firewall with built-in security features.
