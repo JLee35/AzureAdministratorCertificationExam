@@ -4872,3 +4872,188 @@ If you don't configure a health probe, Application Gateway creates a default pro
 
 ## Summary
 The Application Gateway provides load balancing and application routing capabilities across multiple web sites. Several routing methods are available including path-based routing. Also, the Application Gateway includes the Web Application Firewall with built-in security features.
+
+<hr>
+
+## Design an IP addressing schema for your Azure deployment
+The schema ensures that communication works for deployed resources, minimizes public exposure of systems, and gives the organization flexibility in its network.
+
+## Objectives
+- Identify the private IP addressing capabilities of Azure virtual networks.
+- Identify the public IP addressing capabilities of Azure.
+- Identify the requirements for IP addressing when integrating with on-premises networks.
+
+<hr>
+
+## Network IP addressing and integration
+To integrate resources in an Azure virtual network with resources in your on-premises network, you must understand how you can connect those resources and how to configure IP addresses.
+
+## On-premises IP addressing
+A typical on-premises network design includes these components:
+- Routers
+- Firewalls
+- Switches
+- Network segmentation
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/design-ip-addressing-for-azure/media/2-on-premises-network.png">
+
+The diagram shows a simplified version of a typical on-premises network. On the routers facing the internet service provider, you have public IP addresses that are used by your outbound internet traffic as their source. These addresses also are used for your inbound traffic across the internet. The ISP might issue you a block of IP addresses to assign to your devices, or you might have your own block of public IP addresses that your organization owns and controls. You can assign these addresses to systems that you would like to make accessible from the internet, such as web servers.
+
+The perimeter network and internal zone have private IP addresses. In the perimeter network and internal zone, the IP addresses that are assigned to these devices aren't accessible over the internet. The administrator has full control over the IP address assignment, name resolution, security settings, and security rules. There are three ranges of non-routable IP addresses that are designed for internal networks that won't be sent over internet routers:
+
+- 10.0.0.0 to 10.255.255.255
+- 172.16.0.0 to 172.31.255.255
+- 192.168.0.0 to 192.168.255.255
+
+The administrator can add or remove on-premises subnets to accommodate network devices and services. The number of subnets and IP addresses you can have in your on-premises network depends on the Classless Inter-Domain Routing (CIDR) for the IP address block.
+
+## Azure IP addressing
+Azure virtual networks use private IP addresses. The ranges of private IP addresses are the same as for on-premises IP addressing. Like on-premises networks, the administrator has full control over the IP address assignment, name resolution, security settings, and security rules in an Azure virtual network. The administrator can add or remove subnets depending on the CIDR for the IP address block.
+
+In a typical Azure network design, we usually have these components:
+- Virtual networks
+- Subnets
+- Network security groups
+- Firewalls
+- Load balancers
+
+In Azure, the network design has features and functions that are similar to an on-premises network, but the network's structure is different. The Azure network does not follow the typical on-premises hierarchical network design. The Azure network provides the ability to scale up and scale down infrastructure based on demand. Provisioning in the Azure network happens in a matter of seconds. There are no hardware devices, like routers or switches. The intire infrastructure is virtual, and you can slice it up into chunks that suit your requirements.
+
+In Azure, you typically would implement a network security group and a firewall. You'd use subnets to isolate front-end services, including web servers and DNS, and back-end services like databases and storage systems. Network security groups filter internal and external traffic at a network layer. A firewall has more extensive capabilities for network layer filtering and application layer filtering. By deploying both network security groups and a firewall, you get improved isolation of resources for a secure network architecture.
+
+## Basic properties of Azure virtual networks
+A virtual network is your network in the cloud. You can divide your virtual network into multiple subnets. Each subnet has a portion of the IP address space that is assigned to your virtual network. You can add, remove, expand, and shrink a subnet if there are no VMs or services deployed to it.
+
+By default, all subnets in an Azure virtual network can communicate with each other. However, you can use a network security group to deny communications between subnets. The smallest subnet that is supported uses a /29 subnet mask. The largest supported subnet uses a /2 subnet mask.
+
+## Integrate Aure with on-premises networks
+Before you start integrating Azure with on-premises networks, it's important to identify the current private IP address scheme used in the on-premises network. There can be no IP address overlap for interconnected networks.
+
+For example, you can't use 192.168.0.0/16 on your on-premises network and use 192.168.10.0/24 on your Azure virtual network. These ranges both contain the same IP addresses, and won't be able to route trafic between each other.
+
+You can, however, have the same class range for multiple networks. For example, you can use the 10.10.0.0/16 address space for your on-premises network and the 10.20.0.0/16 address space for your Azure network because they don't overlap.
+
+It is vital to check for overlaps when you're planning an IP address scheme. If there's an overlap of IP addresses, you can't integrate your on-premises network with your Azure network.
+
+## Knowlege check
+1. What are some of the typical components involved in a network design? -> A VM, subnet, firewall, and load balancer.
+2. Which of the folowing IP address ranges is routable over the internet? -> 215.11.0.0 to 215.11.255.255
+
+<hr>
+
+## Public and private IP addressing in Azure
+In this unit, you'll explore the constraints and limitations for public and private IP addresses in Azure.
+
+## IP address types
+In Azure, you can use two types of IP addresses:
+- Public IP addresses
+- Private IP addresses
+
+Both types of IP addresses can be allocated in one of two ways:
+
+- Dynamic
+- Static
+
+## Public IP addresses
+Use a public IP address for public-facing services. A public address can be either static or dynamic. A public IP address can be assigned to a VM, an internet-facing load balancer, a VPN gateway, or an application gateway.
+
+- **Dynamic public IP addresses** are assigned addresses that can change over the lifespan of the Azure resource. The dynamic IP address is allocaed when you create or start a VM. The IP address is released when you stop or delete the VM. In each Azure region, public IP addresses are assigned from a unique pool of addresses. The default allocation method is dynamic.
+
+- **Static public IP addresses** are assigned addresses that won't change over the lifespan of the Azure resource. To ensure that the IP address for the resource remains the same, you can set the allocation method to static. In this case, an IP address is assigned immediately and is released only when you delete the resource or change the IP allocation method to dynamic.
+
+## SKUs for public IP addresses
+For public IP addresses, there are two SKUs to choose from: **Basic** and **Standard**. All public IP addresses created before the introduction of SKUs are Basic SKU public IP addresses. With the introduction of SKUs, you can choose the scale, features, and pricing for load balancing internet traffic.
+
+Both Basic and Standard SKUs:
+- Have a default inbound originated flow idle timeout of 4 minutes, which is adjustable up to 30 minutes.
+- Have a fixed outbound timeout originated flow idle timeout of 4 minutes.
+
+## Basic SKU
+Bsic public IPs can be assigned by using static or dynamic allocation methods. Basic public IPs can be assigned to any Azure resource that can be assigned a public IP address, including network interfaces, VPN gateways, application gateways, and internet-facing load balancers.
+
+By default, Basic SKU IP addresses:
+- Are open. Network security groups are recommended but optional for restricting inbound or outbound traffic.
+- Are available for inbound only traffic.
+- Are available when using instance meta data service (IMDS).
+- Don't support Availability Zones.
+- Don't support routing preferences.
+
+## Standard SKU
+By default, Standard SKU IP addresses:
+- Always use static allocation.
+- Are secure, and thus closed to inbound traffic. You must enable inbound traffic by using a network security group.
+- Are zone-redundant; and optionally zonal (they can be created as zonal and guaranteed in a specific availability zone).
+- Can be assigned to network interfaces, Standard public load balancers, application gateways, or VPN gateways.
+- Can be utilized with the routing preference to enable more granular control of how traffic is routed between Azure and the Internet.
+- Can be used as anycast frontend IPs for cross-region load balancers.
+
+## Public IP address prefix
+In Azure, a *public IP prefix* is a reserved, static range of public IP addresses. Azure assigns an IP address from a pool of available addresses that's unique to each region in each Azure cloud. When you define a Public IP address prefix, associated public IP addresses are assigned from a pool for an Azure region.
+
+In a region with Availability Zones, Public IP address prefixes can be created as zone-redundant or associated with a specific availability zone.
+
+The benefit of a public IP address prefix is that you can specify firewall rules for a known range of IP addresses. If your business needs to have datacenters in different regions, you need a different public IP address range for each region. You can assign the addresses from a public IP address prefix to any Azure resource that supports public IP addresses.
+
+You can create a public IP address prefix by specifying a name and prefix size. The prefix size is the number of reserved addresses available for use.
+
+- Public IP address prefixes consist of IPv4 or IPv6 addresses.
+- You can use technology like Azure Traffic Manager to balance region-specific instances.
+- You can't bring your own public IP addresses from on-premises networks into Azure.
+- You can't specify addresses when you create a prefix; they're assigned by Azure. After a prefix is created, the IP addresses are fixed in a contiguous range.
+- Public IP addresses can't be moved between regions; all IP addresses are region-specific.
+
+## Private IP addresses
+Private IP addresses are used for communication within an Azure Virtual Network, including virtual networks and your on-premises networks. Private IP addresses can be set to dynamic (DHCP lease) or static (DHCP reservation).
+
+**Dynamic private IP addresses** are assigned through a DHCP lease and can change over the lifespan of the Azure resource.
+
+**Static private IP addresses** are assigned through a DHCP reservation and don't change throughout the lifespan of the Azure resource. Static private IP addresses persist if a resource is stopped or deallocated.
+
+## IP addressing for Azure virtual networks
+In Azure, a virtual network is a fundamental component that acts as an organization's network. The administrator has full control over IP address assignment, security settings, and security rules. When you create a virtual network, you define a scope of IP addresses. Private IP addressing works the same way as it does in an on-premises network. You choose the private IP addresses that are reserved by Internet Assigned Numbers Authority (IANA) based on your network requirements:
+
+- 10.0.0.0/8
+- 172.16.0.0/12
+- 192.168.0.0/16
+
+A subnet is a range of IP address within the virtual network. You can dived a virtual network into multiple subnets. Each subnet must have a unique address range, which is specified in a classless interndomain routing (CIDR) format. CIDR is a way to represent a block of network IP addresses. An IPv4 CIDR, specified as part of the IP address, shows the length of the network prefix.
+
+Consider, for example, CIDR 192.168.10.0/24. "192.168.10.0" is the network address, and "24" indicates that the first 24 bits are part of the network address, leaving the last 8 bits for specific host addresses. The address range of a subnet can't overlap with other subnets in the virtual network or with the on-premises network.
+
+For all subnets in Azure, the first three IP addresses are reserved by default. For protocol conformance, the first and last IP addresses of all subnets also are reserved. In Azure, an internal DHCP service assigns and maintains the lease of IP addresses. The .1, .2, .3, and last IP addresses are not visible or configurable by the Azure customer. These addresses are reserved and used by internal Azure services.
+
+In Azure virtual networks, IP addresses can be allocated to the following types of resources:
+- Virtual machine network interfaces
+- Load balancers
+- Application gateways
+
+## Knowledge check
+1. What resource can you assign a public IP address to? -> A virtual machine.
+2. What must a virtual machine have to communicate with other resources in the same virtual network? -> Network interface.
+
+<hr>
+
+## Plan IP addressing for your networks
+In this unit, you'll explore the requirements for a network IP address scheme. You'll learn about classless inter-domain routing (CIDR) and how you use it to slice an IP block to meet your addressing needs.
+
+## Gather your requirements
+Before planning your network IP address scheme, you must gather the requirements for your infrastructure. These requirements also will help you prepare for future growth by reserving extra IP addresses and subnets.
+
+Here are two of the questions you might ask to discover the requirements:
+- How many devices do you have on the network?
+- How many devices are you planning to add to the network in the future?
+
+When your network expands, you don't want to redesign the IP address scheme. Here are some other questions you could ask:
+
+- Based on the services running on the infrastructure, what devices do you need to separate?
+- How many subnets do you need?
+- How many devices per subnet will you have?
+- How many devices are you planning to add to the subnets in the future?
+- Are all subnets going to be the same size?
+- How many subnets do you want or plan to add in the future?
+
+You'll need to isolate some services. Isolation of services provides an additional layer of security, but also requires good planning. For example, your front-end servers can be accessed by public devices, but the back-end servers need to be isolated. Subnets help isolate the network in Azure. However, by default, all subnets within a virtual network can communicate with each other in Azure. To provide further isolation, you can use a network security group. You might isolate services depending on the data and its security requirements. For example, you might choose to isolate HR data and the company's financial data from customer databases.
+
+When you know the requirements, you'll have a greater understanding of the total number of devices on the network per subnet and how many subnets you'll need. CIDR allows more flexible allocation of IP addresses than was possible with the original system of IP address classes. Depending on your requirements, you'll slice the IP block into the required subnets and hosts.
+
+Remember that Azure uses the first three addresses of each subnet. The first and last IP addresses of the subnets also are reserved for protocol conformance. Therefore, the number of possible addresses on an Azure subnet is (2^n)-5, where n represents the number of host bits.
