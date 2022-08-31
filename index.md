@@ -5057,3 +5057,187 @@ You'll need to isolate some services. Isolation of services provides an addition
 When you know the requirements, you'll have a greater understanding of the total number of devices on the network per subnet and how many subnets you'll need. CIDR allows more flexible allocation of IP addresses than was possible with the original system of IP address classes. Depending on your requirements, you'll slice the IP block into the required subnets and hosts.
 
 Remember that Azure uses the first three addresses of each subnet. The first and last IP addresses of the subnets also are reserved for protocol conformance. Therefore, the number of possible addresses on an Azure subnet is (2^n)-5, where n represents the number of host bits.
+
+<hr>
+
+## Connect services by using virtual network peering
+You can use virtual network peering to directly connect Azure virtual networks together. When you use peering to connect virtual networks, virtual machines (VMs) in these networks can communicate with each other as if they're in the same network.
+
+With peered virtual networks, traffic between virtual machines are routed through the Azure network. The traffic uses only private IP addresses. It doesn't rely on internet connectivity, gateways, or encrypted connections. The traffic is always private, and it takes advantage of the high bandwidth and low latency of the Azure backbone network.
+
+The two types of peering connections are created in the same way:
+- **Virtual network peering** connects virtual networks in the same Azure region, such as two virtual networks in North Europe.
+- **Global virtual network peering** connects virtual networks that are in different Azure regions, such as a virtual network in North Europe and virtual network in West Europe.
+
+Virtual network peering doesn't affect or disrupt any resources that you've already deployed to the virtual networks. But when you use virtual network peering, consider the key features that the following sections define.
+
+## Reciprocal connections
+When you create a virtual network peering connection with Azure PowerShell or Azure CLI, only one side of the peering gets created. To complete the virtual network peering configuration, you'll need to configure the peering in reverse direction to establish connectivity. When you create the virtual network peering connection through the Azure portal, the configuration for both sides are completed at the same time.
+
+Think of how you connect two network switches together. You connect a cable to each switch and maybe configure some settings so that the switches can communciate. Virtual network peering requires similar connections in each virtual network. Reciprocal connections provide this functionality.
+
+## Cross-subscription virtual network peering
+You can use virtual network peering even when both virtual networks are in different subscriptions. This set up might be necessary for mergers and acquisitions or to connect virtual networks in subscriptions that different departments manage. Virtual networks can be in different subscriptions, and the subscriptions can use the same or different Azure Active Directory tenants.
+
+When you use virtual network peering across subscriptions, you might find that an administrator of one subscription doesn't administer the peer network's subscription. The administrator might not be able to configure both ends of the connection. To peer the virtual networks when both subscriptions are in different Azure Active Directory tenants, the administrators of each subscription must grant the peer subscription's administrator the `Network Contributor` role on their virtual network.
+
+## Transitivity
+Virtual network peering is nontransitive. Only virtual networks that are directly peered can communicate with each other. Virtual networks can't communicate with peers of their peers.
+
+Suppose, for example, that your three virtual networks (A, B, C) are peered like this: A <-> B <-> C. Resources in A can't communicate with resources in C because that traffic can't transit through virtual network B. If you need communication between virtual network A and virtual network C, you must explicitly peer these two virtual networks.
+
+## Gateway transit
+You can connect to your on-premises network from a peered virtual network if you enable gateways transit from a virtual network that has a VPN gateway. Using gateway transit, you can enable on-premises connectivity without deploying virtual network gateways to all your virtual networks. This method can reduce the overall cost and complexity of your network. By using virtual network peering with gateway transit, you can configure a single virtual network as a hub network. Connect this hub network to your on-premises datacenter and share its virtual network gateway with peers.
+
+To enable gateway transit, configure the **Allow gateway transit** option in the hub virtual network where you deployed the gateway connection to your on-premises network. Also connect the **Use remote gateways** option in any spoke virtual networks.
+
+Note: if you want to enable the **Use remote gateways** option in a spoke network peering, you can't deploy a virtual network gateway in the spoke virtual network.
+
+## Overlapping address spaces
+IP address spaces of connected networks within Azure, between Azure and on your on-premises network can't overlap. This is also true for peered virtual networks. Keep this rule in mind when you're planning your network design. In any networks you connect through virtual network peering, VPN, or ExpressRoute, assign different address spaces that don't overlap.
+
+## Alternative connectivity methods
+Virtual network peering is the least complex way to connect virtual networks together. Other methods focus primarily on connectivity between on-premises and Azure networks rather than connections between virtual networks.
+
+You can also connect virtual networks together through an ExpressRoute circuit. ExpressRoute is a dedicated, private connection between an on-premises datacenter and the Azure backbone network. The virtual networks that connect to an ExpressRoute circuit are part of the same routing domain and can communicate with each other. ExpressRoute connections don't go over the public internet, so your communications with Azure services are as secure as possible.
+
+VPNs use the internet to connect your on-premises datacenter to the Azure backbone through an encrypted tunnel. You can use a site-to-site configuration to connect virtual networks together through VPN gatways. VPN gateways have higher latency than virtual network peering setups. They're more complex and can cost more to manage.
+
+When virtual networks are connected through both a gateway and virtual network peering, traffic flows through the peering configuration.
+
+## When to choose virtual network peering
+Virtual network peering can be a great way to enable network connectivity between services that are in different virtual networks. Because it's easy to implement and deploy, and it works well across regions and subscriptions, virtual network peering should be your first choice when you need to integrate Azure virtual networks.
+
+Peering might not be your best option if you have existing VPN or ExpressRoute connections or services behind Azure Basic Load Balancers that would be accessed from a peered virtual network. In these cases, you should research alternatives.
+
+<hr>
+
+## Summary
+Peering connections will enable communication for services that run on the VMs. This method allows low-latency communication between resources in virtual networks. It supports scenarios where resources are in different regions or subscriptions. Virtual network peering should be your first chioce when you need to connect virtual networks.
+
+<hr>
+
+## Host your domain on Azure DNS
+Azure DNS lets you host your DNS records for your domains on Azure infrastructure. With Azure DNS, you can use the same credentials, APIs, tools, and billing as your other Azure services.
+
+## Objectives
+- Configure Azure DNS to host your domain.
+
+<hr>
+
+## What is Azure DNS?
+Azure DNS is a hosting service for DNS domains that provides name resolution by using Microsoft Azure infrastructure.
+
+## What is DNS?
+DNS, or the Domain Name System, is a protocol within the TCP/IP standard. DNS serves an essential role of translating human-readable domain names, for example `www.wideworldimports.com`, into a known IP address. IP addresses enable computers and network devices to identify and route requests between themselves.
+
+DNS uses a global directory hosted on servers around the world. Microsoft is part of that network that provides a DNS service through Azure DNS.
+
+A DNS server is also known as a DNS name server, or just a name server.
+
+## How does DNS work?
+A DNS server carries out one of two primary functions:
+- Maintains a local cache of recently accessed or used domain names and their IP addresses. This cache provides a faster response to a local domain lookup request. If the DNS server can't find the requested domain, it passes the request to another DNS server. This process repeats at each DNS server until either a match is made or the search times out.
+- Maintains the key-value pair database of IP addresses and any host or subdomain over which the DNS server has authority. This function is often associated with mail, web, and other internet domain services.
+
+## DNS server assignment
+In order for a computer, server, or other network-enabled device to access web-based resources, it must reference a DNS server.
+
+When you connect by using your on-premises network, the DNS settings come from your server. When you connect by using an external location, like a hotel, the DNS settings come from the internet service provider (ISP).
+
+## Domain lookup requests
+Here's a simplified overview of the process a DNS server uses when it resolves a domain name lookup request:
+
+- Checks to see if the domain name is stored in the short-term cache. If so, the DNS server resolves the domain request.
+- If the domain isn't in the cache, it contacts one or more DNS servers on the web to see if they have a match. When a match is found, the DNS server updates the local cache and resolves the request.
+- If the domain isn't found after a reasonable number of DNS checks, the DNS server responds with a *domain cannot be found* error.
+
+## IPv4 and IPv6
+Every computer, server, or network-enabled device on your network has an IP address. An IP address is unique within your domain. There are two standards of IP address: IPv4 and IPv6.
+
+- **IPv4** is composed of four sets of numbers, in the range of 0 to 255, each separated by a dot. Example: 127.0.0.1. Today, IPv4 is the most commonly used standard. Yet, with the increase in IoT devices, the IPv4 standard will eventually be unable to keep up.
+
+- **IPv6** is a relatively new standard and will eventually replace IPv4. It's made up of eight groups of hexadecimal numbers, each separated by a colon. Example: fe80:11a1:ac15:e9gf:e884:edb0:ddee:fea3.
+
+Many network devices are now provisioned with both an IPv4 and an IPv6 address. The DNS name server can resolve domain names to both IPv4 and IPv6 addresses.
+
+## DNS settings for your domain
+Whether the DNS server for your domain is hosted by a third party or managed in-house, you'll need to configure it for each host type you're using. Host types include web, email, or other services you're using.
+
+## DNS record types
+Configuration information for your DNS server is stored as a file within a zone on your DNS server. Each file is called a record. The following record types are the most commonly created and used:
+
+- **A** is the host record, and is the most common type of DNS record. It maps the domain or host name to the IP address.
+- **CNAME** is a Canonical Name record that's used to create an alias from one domain name to another domain name. If you had different domain names that all accessed the same website, you would use CNAME.
+- **MX** is the mail exchange record. It maps mail requests to your mail server, whether hosted on-premises or in the cloud.
+- **TXT** is the text record. It's used to associate text strings with a domain name. Azure and Microsoft 365 use TXT records to verify domain ownership.
+
+Additionaly, there are the following record types:
+- Wildcards
+- CAA (certificate authority)
+- NS (name server)
+- SOA (start of authority)
+- SPF (sender policy framework)
+- SRV (server locations)
+
+The SOA and NS records are created automatically when you create a DNS zone by using Azure DNS.
+
+## Record sets
+Some record types support the concept of record sets, or resource record sets. A record set allows for multiple resources to be defined in a single record. For example, here is an A record that has one domain with two IP addresses:
+
+        www.wideworldimports.com        3600    IN      A       127.0.0.1
+        www.wideworldimports.com        3600    IN      A       127.0.0.2
+
+SOA and CNAME records can't contain record sets.
+
+## What is Azure DNS?
+Azure DNS allows you to host and manage your domains by using a globally distributed name server infrastructure. It allows you to manage all of your domains by using your existing Azure credentials.
+
+Azure DNS acts as the SOA for the domain.
+
+You can't use Azure DNS to register a domain name. You use a third-party domain registrar to register your domain.
+
+## Why use Azure DNS to host your domain?
+Azure DNS is built on the Azure Resource Manager service, which offers the following benefits:
+- Improved security
+- Ease of use
+- Private DNS domains
+- Alias record sets
+
+At this time, Azure DNS doesn't support Domain Name System Security Extensions. If you require this security extension, you should host those portions of your domain with a third-party provider.
+
+## Security features
+Azure DNS provides the following security features:
+
+- Role-based access control, which gives you fine-grained control over users' access to Azure resources. You can monitor their usage and control the resources and services to which they have access.
+- Activity logs, which let you track changes to a resource and pinpoint where faults occurred.
+- Resource locking, which gives a greater level of control to restrict or remove access to resource groups, subscriptions, or any Azure resources.
+
+## Ease of use
+Azure DNS can manage DNS records for your Azure services, and provide DNS for your external resources. Azure DNS uses the same Azure credentials, support contract, and billing as your other Azure services.
+
+You can manage your domains and records by using the Azure portal, Azure PowerShell cmdlets, or the Azure CLI. Applications that require automated DNS management can integrate with the service by using the REST API and SDKs.
+
+## Private domains
+Azure DNS handles the translation of external domain names to an IP address. Azure DNS lets you create private zones. These provide name resolution for virtual machines (VMs) within a virtual network, and between virtual networks, without having to create a custom DNS solution. This allows you to use your own custom domain names rather than the Azure-provided names.
+
+To publish a private DNS zone to your virtual network, you'll specify the list of virtual networks that are allowed to resolve records within the zone.
+
+Private DNS zones have the following benefits:
+- There's no need to invest in a DNS solution. DNS zones are supported as part of the Azure infrastructure.
+- All DNS record types are supported: A, CNAME, TXT, MX, SOA, AAAA, PTR, and SRV.
+- Host names for VMs in your virtual network are automatically maintained.
+- Split-horizon DNS support allows the same domain name to exist in both private and public zones. It resolves to the correct one based on the originating request location.
+
+## Alias record sets
+Alias records sets can point to an Azure resource. For example, you can set up an alias record to direct traffic to an Azure public IP address, an Azure Traffic manager profile, or an Azure Content Delivery Network endpoint.
+
+The alias record set is supported in the following DNS record types:
+- A
+- AAAA
+- CNAME
+
+## Knowledge check
+1. What does Azure DNS allow you to do? -> Manage and host your registered domain and associated records.
+2. What security features does Azure DNS provide? -> Role-based access control, activity logs, and resource locking.
+3. What type of DNS record should you create to map one or more IP addresses against a single domain? -> A or AAAA
