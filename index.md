@@ -5241,3 +5241,791 @@ The alias record set is supported in the following DNS record types:
 1. What does Azure DNS allow you to do? -> Manage and host your registered domain and associated records.
 2. What security features does Azure DNS provide? -> Role-based access control, activity logs, and resource locking.
 3. What type of DNS record should you create to map one or more IP addresses against a single domain? -> A or AAAA
+
+<hr>
+
+## Configure Azure DNS to host your domain
+In this unit, you'll learn how to:
+- Create and configure a DNS zone for your domain by using Azure DNS.
+- Understand how to link your domain to an Azure DNS zone.
+- Create and configure a private DNS zone.
+
+## Configure a public DNS zone
+You'll use a DNS zone to host the DNS records for a domain, such a wideworldimports.com.
+
+## Step 1: Create a DNS zone in Azure
+To host a domain name with Azure DNS, you first need to create a DNS zone for that domain. A DNS zone holds all the DNS entries for your domain.
+
+When creating a DNS zone, you need to supply the following details:
+
+- **Subscription**: The subscription to be used.
+- **Resource group**: The name of the resource group to hold your domains. If one doesn't exist, create one to allow for better control and management.
+- **Name**: The name of your domain.
+- **Resource group location**: The location defaults to the location of the resource group.
+
+## Step 2: Get your Azure DNS name servers
+After you create a DNS zone for the domain, you need to get the name server details from the name servers (NS) record. You'll use these details to update your domain registrar's information and point to the Azure DNS zone.
+
+<img width="517" alt="image" src="https://docs.microsoft.com/en-us/learn/modules/host-domain-azure-dns/media/3-name-server.png">
+
+## Step 3: Update the domain registrar setting
+As the domain owner, you need to sign in to the domain-management application provided by your domain registrar. In the management application, edit the NS record, and change the NS details to match your DNS name server details.
+
+Change the NS details is called *domain delegation*. When you delegate the domain, you must use all four name servers provided by Azure DNS.
+
+## Step 4: Verify delegation of domain name services
+The next step is to verify that the delegated domain now points to the Azure DNS zone you created for the domain. This can take as few as 10 minutes, but might take longer.
+
+To verify the success of the domain delegation, query the start of authority (SOA) record. The SOA record was automatically created when the Azure DNS zone was set up. You can do this by using a third-party tool like nslookup.
+
+The SOA record represents your domain and will become the reference point when other DNS servers are searching for your domain on the internet.
+
+To verify the delegation, use nslookup like this:
+
+        nslookup -type=SOA wideworldimports.com
+
+## Step 5: Configure your custom DNS settings
+The domain name is wideworldimports.com. When it's used in a browser, the domain resolves to your website. But what if you want to add in web servers or load balancers? These resources need to have their own custom setttings in the DNS zone, either as an A record or a CNAME.
+
+## A record
+Each A record requires the following details:
+- **Name**: The name of the custom domain, for example *webserver1*.
+- **Type**: In this instance, it's A.
+- **TTL**: Represents the "time-to-live" as a whole unit, where 1 is one second. The value indicates how long the A record lives in a DNS cache before it expires.
+- **IP address**: The IP address of the server to which this A record should resolve.
+
+## CNAME record
+The CNAME is the canonical name, or the alias for an A record. Use CNAME when you have different domain names that all access the same website. For example, you might need a CNAME in the *wideworldimports* zone, if you want both www.wideworldimports.com and wideworldimports.com to resolve to the same IP address.
+
+You would create the CNAME record in the *wideworldimports* zone with the following information:
+
+- Name: www
+- TTL: 600 seconds
+- Record type: CNAME
+
+If you expose a web function, you would create a CNAME record that resolves to the Azure function.
+
+## Configure private DNS zone
+To provide name resolution for virtual machines within a virtual network and between virtual networks, create a private DNS zone.
+
+<hr>
+
+## Dynamically resolve resource name by using alias record
+You know that the A record and CNAME record don't support direct connection to Azure resources like your load balancers. You've been tasked with finding out how to linke the apex domain with a load balancer.
+
+## What is an apex domain?
+The apex domain is the highest level of your domain. The apex domain is also sometimes referred to the *zone apex* or *root apex*. It's often represented by the @ symbol in your DNS zone records.
+
+CNAME records that you might need for an Azure Traffic Manager profile or Azure Content Delivery Network endpoints aren't supported at the zone apex level. However, other *alias records* are supported at the zone apex level.
+
+## What are alias records?
+Azure alias records enable a zone apex domain to reference other Azure resources from the DNS zone. You don't need to create complex redirection policies. You can also use an Azure alias to route all traffic through Traffic Manager.
+
+The Azure alias record can point to the following Azure resources:
+- A Traffic Manager profile
+- Azure Content Delivery Network endpoints
+- A public IP resource
+- A front door profile
+
+Alias records provide lifecycle tracking of target resources, ensuring that changes to any target resource are automatically applied to the DNS zone. Alias records also provide support for load-balanced applications in the zone apex.
+
+The alias record set supports the following DNS zone record types:
+- **A**: The IPv4 domain name-mapping record.
+- **AAAA**: The IPv6 domain name-mapping record.
+- **CNAME**: The alias for your domain, which links to the A record.
+
+## Uses for alias records
+The following are some of the advantages of using alias records:
+- **Prevents dangling DNS records**: A dangling DNS record occurs when the DNS zone records aren't up to date with changes to IP addresses. Alias records prevent dangling references by tightly coupling the lifecycle of a DNS record with an Azure resource.
+- **Updates DNS record set automatically when IP addresses change**: When the underlying IP address of a resource, service, or application is changed, the alias record ensures that any associated DNS records are automatically refreshed.
+- **Hosts load-balanced applications at the zone apex**: Alias records allow for apex resource routing to Traffic Manager.
+- **Points zone apex to Azure Content Delivery Network endpoints**: With alias records, you can now directly reference your Azure Content Delivery Network instance.
+
+An alias record allows you to link the zone apex to a load balancer. It creates a link to the Azure resource, rather than a direct IP-based connection. So, if the IP address of your load balancer changes, the zone apex record continues to work.
+
+<hr>
+
+## Manage and control traffic flow in your Azure deployment with routes
+Learn how to control Azure virtual network traffic by implementing custom routes.
+
+## Objectives
+- Identify the routing capabilities of an Azure virtual network
+- Configure routing within a virtual network
+- Deploy a basic network virtual appliance
+- Configure routing to send traffic through a network virtual appliance
+
+<hr>
+
+## Azure routing
+Network traffic in Azure is automatically routed across Azure subnets, virtual networks, and on-premises networks. This routing is controlled by system routes, which are assigned by default to each subnet in a virtual network.
+
+You can't create or delete system routes, but you can override the system routes by adding custom routes to control traffic flow to the next hop.
+
+Within Azure, there are other system routes. Azure will create these routes if the following capabilities are enabled:
+- Virtual network peering
+- Service chaining
+- Virtual network gateway
+- Virtual network service endpoint
+
+## Virtual newtork service endpoint
+Virtual network endpoints extend your private address space in Azure by providing a direct connection to your Azure resources. This connection restricts the flow of traffic: you Azure virtual machines can access your storage account directly from the private address space and deny access from a public virtual machine. As you enable service endpoints, Azure creates routes in the route table to direct this traffic.
+
+## Custom routes
+Custom routes allow for more control when routing traffic (say through an NVA or through a firewall). 
+
+You have two options for implementing custom routes: create a user-defined route, or use Border Gateway Protocol (BGP) to exchange routes between Azure and on-premises networks.
+
+## User-defined routes
+You can use a user-defined route to override the default system routes so traffic can be routed through firewalls or NVAs.
+
+## Border gateway protocol
+A network gateway in your on-premises network can exchange routes with a virtual network gateway in Azure by using BGP. BGP is the standard routing protocol that is normally used to exchange routing and information among two or more networks. BGP is used to transfer data and information between host gateways llike on the internet or between autonomous systems.
+
+You'll typically use BGP to advertise on-premises routes to Azure when you're connected to an Azure datacenter through Azure ExpressRoute. you can also configure BGP if you connect to an Azure virtual network by using a VPN site-to-site connection.
+
+BGP offers network stability, because routers can quickly change connections to send packets if a connection path goes down.
+
+## Route selection and priority
+If multiple routes are available in a route table, Azure uses the route with the longest prefix match.
+
+The longer the route prefix, the shorter the list of IP addresses through that prefix. When you use the longer prefixes, the routing algorithm can select the intended address more quickly.
+
+You can't configure multiple user-defined routes with the same address prefix.
+
+If there are multiple routes with the same address prefix, Azure selects the route based on the type of the following order of priority:
+1. User-defined routes
+2. BGP routes
+3. System routes
+
+## Knowledge check
+1. Why would you use a custom route in a virtual network? -> To control the flow of traffic within your Azure virtual network.
+2. Why might you use virtual network peering? -> To connect virtual networks together in the same region or across regions.
+
+<hr>
+
+## What is an NVA?
+A network virtual appliance (NVA) is a virtual appliance that consists of various latyers like:
+- a firewall
+- a WAN optimizer
+- application-delivery controllers
+- routers
+- load balancers
+- IDS/IPS
+- proxies
+
+You can use an NVA to filter traffic inbound to a virtual network, to block malicious requests, and to block requests made from unexpected resources.
+
+## Network virtual appliance
+Network virtual appliances (NVAs) are virtual machines that control the flow of network traffic by controlling routing. You'll typically use them to manage traffic flowing from a perimeter-network environment to other networks or subnets.
+
+## User-defined routes
+For most environments, the default system routes already defined by Azure are enough to get the environments up and running. In certain cases, you should create a routing table and add custom routes. Examples include:
+- Access to the internet via on-premises network using forced tunneling.
+- Using virtual appliances to control traffic flow.
+
+You can create multiple route tables in Azure. Each route table can be associated with one or more subnets. A subnet can only be associated with one route table.
+
+## Network virtual appliances in a highly available architecture
+If traffic is routed through an NVA, the NVA becomes a critical piece of your infrastructure. Any NVA failures will directly affect the ability of your services to communicate. It's important to include a highly available architecture in your NVA deployment.
+
+## Knowledge check
+1. What is the main benefit of using a network virtual appliance? -> To control incoming traffic from the perimeter network and allow only traffic that meets security requirements to pass through.
+2. How might you deploy a network virtual appliance? -> You can configure a Windows virtual machine and enable IP forwarding after route tables, user-defined routes, and subnets have been updated. Or you can use a partner image from Azure Marketplace.
+
+<hr>
+
+## Azure Load Balancer features and capabilities
+With Azure Load Balancer, you can spread user requests across multiple virtual machines or other services, allowing you to scale the app to larger sizes than a single virtual machine can support, and ensuring that users get service even when a virtual machine fails.
+
+## Distribute traffic with Azure Load Balancer
+Azure Load Balancer is a service you can use to distribute traffic across multiple virtual machines. Use Load Balancer to scale applications and create high availability for your virtual machines and services. Load balancers use a hash-based distribution algorithm. By default, a five-tuple has is used to map traffic to available servers. The hash is made from the following elements:
+- **Source IP**: The IP address of the requesting client.
+- **Source port**: The port of the requesting client.
+- **Destination IP**: The destination IP of the request.
+- **Destination port**: The destination port of the request.
+- **Protocol type**: The specified protocol type, TCP or UDP.
+
+Load Balancer supports inbound and outbound scenarios, provides low latency and high throughput, and scales up to millions of flows for TCP and UDP applications.
+
+Load balancers aren't physical instances. Load balancer objects are used to express how Azure configures its infrastructure to meet your requirements.
+
+## Availability sets
+An availability set is a logical grouping that you use to isolate virtual machine resources from each other when they're deployed. Azure ensures that the virtual machines you put in an availability set run across multiple physical servers, compute racks, storage units, and network switches. If there's a hardware or software failure, only a subnet of your virtual machines is affected. Your overall solution stays operational. Availability sets are essential for building reliable cloud solutions.
+
+## Availability zones
+An availability zone offers groups of one or more datacenters that have independent power, cooling, and networking. The virtual machines in an availability zone are placed in different physical locations within the same region. Use this architecture when you want to ensure that, when an entire datacenter fails, you can continue to serve users.
+
+Availability zones don't support all virtual machine sizes and aren't available in all Azure regions. Check that they're supported in your region before you use them in your architecture.
+
+## Select the right Load Balancer product
+Two products are available when you create a load balancer in Azure: basic load balancers and standard load balancers.
+
+Basic load balancers allow:
+- Port forwarding
+- Automatic reconfiguration
+- Health probes
+- Outbound connections through source network address translation (SNAT)
+- Diagnostics through Azure Log Analytics for public-facing load balancers
+
+Basic load balancers can be used only with a single availability set or scale set.
+
+Standard load balancers support all of the basic load balancer features. They also allow:
+- HTTPS health probes
+- Availability zones
+- Diagnostics through Azure Monitor, for multidimensional metrics
+- High availability (HA) ports
+- Outbound rules
+- A guaranteed SLA (99.99% for two or more VMs)
+
+## Internal and external load balancers
+An external load balancer operates by distributing client traffic across multiple virtual machines. An external load balancer permits traffic from the internet. The traffic might come from browsers, mobile apps, or other sources.
+
+An internal load balancer distributes a load from internal Azure resources to other Azure resources. 
+
+## Knowledge check
+1. What is the default distribution type for traffic through a load balancer? -> Five-tuple hash.
+2. What is the main advantage of an availability set? -> It allows virtual machines to be available across physical server failures.
+
+<hr>
+
+## Configure a public load balancer
+A public load balancer maps the public IP address and port number of incoming traffic to the private IP address and port number of a virtual machine in the back-end pool. The responses are then returned to the client. By applying load-balancing rules, you distribute specific types of traffic across multiple virtual machines or services.
+
+## Distribution modes
+By default, Azure Load Balancer distributes network traffic equally among virtual machine instances. The following distribution modes are also possible if a different behavior is required:
+
+- **Five-tuple hash**: The default distribution mode for Load Balancer is a five-tuple hash. The tuple is composed of source IP, source port, destination IP, destination port, and protocol type. Because the source port is included in the hash and the source port changes for each session, clients might be directed to a different virtual machine for each session.
+
+- **Source IP affinity**: This distribution mode is also known as *session affinity* or *client IP affinity*. To map traffic to the available servers, the source IP affinity mode uses a two-tuple hash (from the source IP address and destination IP address) or a three-tuple hash (from the source IP address, destination address, and protocol type). The hash ensures that requests from a specific client are always sent to the same virtual machine behind the load balancer.
+
+## Load Balancer and Remote Desktop Gateway
+Remote Desktop Gateway is a Windows service that you can use to enable clients on the internet to make Remote Desktop Protocol (RDP) connections through firewalls to Remove Desktop servers on your private network. The default five-tuple has in Load Balancer is incompatible with this service. If you want to use Load Balancer with your Remote Desktop servers, use source IP affinity.
+
+## Load Balancer and media upload
+Another use case for source IP affinity is media upload. In many implementations, a client initiates a session through a TCP protocol and connects to a destination IP address. This connection remains open throughout the upload to monitor progress, but the file is uploaded through a separate UDP protocol.
+
+With the five-tuple hash, the load balancer likely will send the TCP and UDP connections to different destination IP addresses and the upload won't finish sucessfully. Use source IP affinity to resolve this issue.
+
+<hr>
+
+## Internal load balancer
+In addition to balancing requests from users to front-end servers, you can use Azure Load Balancer to distribute traffic from front-end servers evenly among back-end servers.
+
+## Configure an internal load balancer
+You can configure an internal load balancer in almost the same way as an external load balancer, but with these differences:
+- When you create the load balancer, select **Internal** for the **Type** value. When you select this setting, the front-end IP address of the load balancer isn't exposed to the internet.
+- Assign a private IP address instead of a public IP address for the front end of the load balancer.
+- Place the load balancer in the protected virtual network that contains the virtual machines you want to handle the requests.
+
+The internal load balancer should be visible only to the web tier. All the virtual machines that host the databases are in one subset. You can use an internal load balancer to distribute traffic to those virtual machines.
+
+## Check your knowledge
+1. Which configuration is required to configure an internal load balancer? -> Virtual machines should be in the same virtual network.
+2. Which of the following statement about external load balancers is correct? -> They have a public IP address.
+
+<hr>
+<hr>
+
+## Monitor and back up Azure resources
+
+<hr>
+
+## Protect virtual machine data
+You can protect your data by taking backups at regular intervals. There are several backup options available for VMs, depending on your use-case.
+
+1. Snapshots
+2. Azure Backup
+3. Azure Site Recovery
+
+## Azure Backup
+For backing up Azure VMs running production workloads, use Azure Backup. Azure Backup supports application-consistent backups for both Windows and Linux VMs. Azure Backup creates recovery points that are stored in geo-redundant recovery vaults. When you restore from a recovery point, you can restore the whole VM or just specific files.
+
+## Azure Site Recovery
+Azure Site Recovery protects your VMs from a major disaster scenario when a whole region experiences an outage due to major natural disaster or widespread service interruption. You can configure Azure Site Recovery for your VMs so that you can recover your application with a single click in matter of minutes. You can replicate to an Azure region of your choice.
+
+## Managed disk snapshots
+In development and test environments, snapshots provide a quick and simple option for backing up VMs that use Managed Disks. A managed disk snapshot is a read-only full copy of a managed disk that is stored as a standard managed disk by default. With snapshots, you can back up your managed disks at any point in time. These snapshots exist independent of the source disk and can be used to create new managed disks. They are billed based on the used size. For example, if you create a snapshot of a managed disk with provisioned capacity of 64 GiB and actual used data size of 10GiB, that snapshot is billed only for the used data size of 10 GiB.
+
+## Images
+Managed disks also support creating a managed custom image. You can create an image from your custom VHD in a storage account or directly from a generalized (sysprepped) VM. This process captures a single image. This image contains all managed disks associated with a VM, including both the OS and data disks. This managed custom image enables creating hundreds of VMs using your custom image without the need to copy or manage any storage accounts.
+
+## Images vs snapshots
+With managed disks, you can take an image of a generalized VM that has been deallocated. This image includes all of the disks attached to the VM. You can use this image to create a VM, and it includes all of the disks.
+
+- A snapshot is a copy of a disk at the point in time the snapshot is taken. It applies only to one disk. If you have a VM that has one disk (the OS disk), you can take a snapshot or an image of it and create a VM from either the snapshot or the image.
+- A snapshot doesn't have awareness of any disk except the one it contains. This makes it problematic to use in scenarios that require the coordination of multiple disks, such as striping. Snapshots would need to be able to coordinate with each other and this is currently not supported.
+
+<hr>
+
+## Create virtual machine snapshots
+An Azure backup job consists of two phases. First, a virtual machine snapshot is taken. Second, the virtual machine snapshot is transferred to the Azure Recovery Services vault.
+
+A recovery point is considered created only after both steps are completed. As a part of the upgrade, a recovery point is created as soon as the snapshot is finished. The recovery point is used to perform a restore. You can identify the recovery point in the Azure portal by using "snapshot" as the recovery point type. After the snapshot is transferred to the vault, the recovery point type changes to "snapshot and vault".
+
+## Capabilities and considerations
+- Ability to use snapshots taken as part of a backup job that is available for recovery without waiting for data transfer to the vault to finish.
+- Reduces backup and restore times by retaining snapshots locally, for two days by default. This default snapshot retention value is configurable to any value between 1 and 5 days.
+- Support disk sizes up to 32 TB. Resizing of disks is not recommended by Azure Backup.
+- Supports Standard SSD disk along with Standard HDD disks and Premium SSD disks.
+- Incremental snapshots are stored as page blobs. All the users using unmanaged disks are charged for the snapshots in their local storage account. Since the restore point collections used by Managed VM backups use blob snapshots at the underlying storage level, for managed disks you wlil see costs corresponding to blob snapshot pricing and they are incremental.
+- For premium storage accounts, the snapshots taken for instant recovery points count towards the 10-TB limit of allocated space.
+- You get an ability to configure the snapshot retention based on the restore needs. This will help you save cost for snapshot retention if you don't perform restores frequently.
+
+Note: By default, snapshots are retained for two days. This feature allows restore operation from these snapshots there by cutting down the restore times. It reduces the time that is required to transform and copy data back from the vault.
+
+<hr>
+
+## Setup recovery services vault backup options
+**Recovery Services vault** is a storage entity in Azure that houses data. The data is typically copies of data, or configuration information for virtual machines (VMs), workloads, servers, or workstations. You can use Recovery Services vaults to hold backup data for various Azure services such as IaaS VMs (Linux or Windows) and Azure SQL databases. Recovery Services vaults support System Center DPM, Windows Server, Azure Backup Server, and more. Recovery Services vaults make it easy to organize your backup data, while minimizing management overhead.
+
+- The Recovery Services vault can be used to backup Azure machines.
+- The Recovery Services vault can be used to backup on-premises virtual machines including: Hyper-V, VMware, System State, and Bare Metal Recovery.
+
+<hr>
+
+## Backup virtual machines
+Backing up Azure virtual machines using Azure Backup is easy and follows a simple process.
+
+1. **Create a recovery services vault**: To back up your files and folders, you need to create a Recovery Services vault in the region where you want to store the data. You also need to determine how you want your storage replicated, either geo-redundant (default) or locally redundant. By default, your vault has geo-redundant storage. If you are using Azure as a primary backup storage endpoint, use the default geo-redundant storage. If you are using Azure as a non-primary backup storage endpoint, then choose locally redundant storage, which will reduce the cost of storing data in Azure.
+2. **Use the Portal to define the backup**: Protect your data by taking snapshots of your data at defined intervals. These snapshots are known as recovery points, and they are stored in recovery service vaults. If or when it is necessary to repair or rebuild a VM, you can restore the VM from any of the saved recovery points. A backup policy defines a matrix of when the data snapshots are taken, and how long those snapshots are retained. When defining a policy for backing up a VM, you can trigger a backup job once a day.
+3. **Backup the virtual machine**: The Azure VM Agent must be installed on the Azure virtual machine for the Backup extension to work. However, if your VM was created from the Azure gallery, then the VM Agent is already present on the virtual machine. VMs that are migrated from on-premises data centers would not have the VM Agent installed. In such a case, the VM Agent needs to be installed.
+
+## Restore virtual machines
+Once your virtual machine snapshots are safely in the recovery services vault it is easy to recover them.
+
+Once your trigger the restore operation, the Backup service creates a job for tracking the restore operation. The Backup service also creates and temporarily displays notification, so you monitor how the backup is proceeding.
+
+<hr>
+
+## Implement Azure Backup Server
+Another method of backing up virtual machines is using a Data Protection Manager (DPM) or Microsoft Azure Backup Server (MABS) server. This method can be used for specialized workloads, virtual machines, or files, folders, and volumes. Specialized workloads can include SharePoint, Exchange, and SQL server.
+
+## Advantages
+The advantages of backing up machines and apps to MABS/DPM storage, and then backing up DPM/MABS storage to a vault are as follows:
+- Backing up to MABS/DPM provides app-aware backups optimized for common apps. Tese apps include SQL Server, Exchange, and SharePoint. Also, file/folder/volume backups, and machine state backups. Machine state backups can be bare-metal or system state.
+- For on-premises machines, you don't need to install the MARS agent on each machine you want to back up. Each machine runs the DPM/MABS protection agent, and the MARS agent runs on the MABS/DPM only.
+- You have more flexibility and granular scheduling options for running backups.
+- You can manage backups for multiple machines that you gather into protection groups in a single console. Grouping machines is useful when apps are tiered over multiple machines and you want to back them up at the same time.
+
+## Backup steps
+1. Install the DPM or MABS protection agent on machines you want to protect. You then add the machines to a DPM protection group.
+2. To protect on-premises machines, the DPM or MABS server must be located on-premises.
+3. To protect Azure VMs, the MABS server must be located in Azure, running as an Azure VM.
+4. With DPM/MABS, you can protect backup volumes, shares, files, and folders. You can also protect a machine's system state (bare metal), and you can protect specific apps with app-aware backup settings.
+5. When you set up protection for a machine or apps in DPM/MABS, you select to back up to the MABS/DPM local disk for short-term storage and to Azure for online protection. You also specify when the backup to local DPM/MABS storage should run and when the online backup to Azure should run.
+6. The disk of the protected workload is backed up to the local MABS/DPM disks, according to the schedule you specified.
+7. The DPM/MABS disks are backed up to the vault by the MARS agent that's running on the DPM/MABS server.
+
+## Manage soft delete
+Azure Storage now offers soft delete for blob objects so that you can more easily recover your data when it is erroneously modified or deleted by an application or other storage account user. Soft delete for VMs protects the backups of your VMs from unintened deletion. Even after the backups are deleted, they're preserved in soft-delete state for 14 additional days.
+
+## How soft delete works for virtual machines
+1. To delete the backup data of a VM, the backup must be stopped.
+2. You can then choose to delete or retain the backup data. If you choose to **Delete backup data** and then **Stop backup**, the VM backup won't be permanently deleted. Rather, the backup data will be retained for 14 days in the soft deleted state.
+3. During those 14 days, in the Recovery Services vault, the soft deleted VM will appear with a red **soft-delete** icon next to it. If any soft-deleted backup items are present in the vault, the vault can't be deleted at that time. Try deleting the vault after the backup items are permanently deleted, and there are no items in soft deleted state left in the vault.
+4. To restore the soft-deleted VM, it must first be undeleted. To undelete, choose the soft-deleted VM, and then select the option **Undelete**. At this point, you can also restore the VM by selecting **Restore VM** from the chosen restore point.
+5. After the undelete process is completed, the status will return to **Stop backup with retain data** and then you can choose **Resume backup**. The Resume backup operation brings back the backup item in the active state, associated with a backup policy selected by the user defining the backup and retention schedules.
+
+Note: Soft delete only protects deleted backup data. If a VM is deleted without a backup, the soft-delete feature won't preserve the data. All resources should be protected with Azure Backup to ensure full resilience.
+
+<hr>
+
+## Implement Azure Site Recovery
+Site Recovery helps ensure business continuity by keeping business apps and workloads running during outages. Site Recovery replicates workloads running on physical and virtual machines (VMs) from a primary site to a secondary location. When an outage occurs at your primary site, you fail over to secondary location, and access apps from there. After the primary location is running again, you can fall back to it.
+
+## Replication scenarios
+- Replicate Azure VMs from one Azure region to another.
+- Replicate on-premises VMware VMs, Hyper-V VMs, physical servers (Windows and Linux), Azure Stack VMs to Azure.
+- Replicate AWS Windows instances to Azure.
+- Replicate on-premises VMware VMs, Hyper-V VMs managed by System Center VMM, and physical servers to a secondary site.
+
+## Features
+- Using Site Recovery, you can set up and manage replication, failover, and failback from a single location in the Azure portal.
+- Replication to Azure eliminates the cost and complexity of maintaining a secondary datacenter.
+- Site Recovery orchestrates replication without intercepting application data. When you replicate to Azure, data is stored in Azure storage, with the resilience that it provides. When failover occurs, Azure VMs are created, based on the replicated data.
+- Site Recovery provides continuous replication for Azure VMs and VMware VMs, and replication frequency as low as 30 seconds for Hyper-V.
+- You can replicate using recovery points with application-consistent snapshots. These snapshots capture disk data, all data in memory, and all transactions in process.
+- You can run planned failovers for expected outages with zero-data loss, or unplanned failover with minimal data loss (depending on replication frequency) for unexpected disasters. You can easily fall back to your primary site when it's available again.
+- Site Recovery integrates with Azure for simple application network management, including reserved IP addresses, configuring load-balancing, and integrating Azure Traffic Manager for efficient network switchovers.
+
+<hr>
+
+## Knowledge check
+1. A company has several Azure VMs that are currently running production workloads. There is a mix of production Windows Server and Linux servers. What would be the choice for production backups? -> Azure Backup (best option for production workloads)
+2. What option is recommended to backup a database disk used for deployment? -> Disk snapshot (readonly and specifically for dev and test envs)
+3. A malware attak has deleted several virtual machine backups. How long are items available in the soft delete state? -> 14 days.
+
+<hr>
+
+## Configure Azure Monitor
+You will learn how to configure Azure Monitor including querying the activity log.
+
+<hr>
+
+## Skills measured
+Monitor resources by using Azure resources
+- Configure and interpret metrics
+- Configure Azure Monitor logs
+
+<hr>
+
+## Describe Azure Monitor key capabilities
+- **Monitor and visualize metrics**: Metrics are numerical values available from Azure resources helping you understand the health, operation and performance of your system.
+- **Query and analyze logs**: Logs are activity logs, diagnostic logs, and telemetry from monitoring solutions; analytics queries help with troubleshooting and visualizations.
+- **Setup alerts and actions**: Alerts notify you of critical conditions and potentially take automated corrective actions based on triggers from metrics or logs.
+
+<hr>
+
+## Metrics
+For many Azure resources, the data collected by Azure Monitor is displayed on the Overview page in the Azure portal.
+
+## Logs
+Log data collected by Azure Monitor is stored in Log Analytics which includes a rich query language to quickly retrieve, consolidate, and analyze collected data. You can create test queries using the Log Analytics page in the Azure portal. You can use the query results to directly analyze the data, save queries, visualize the data, or create alert rules.
+
+Azure Monitor uses a version of the Data Explorer query language that is suitable for simple log queries but also includes advanced functionality such as aggregations, joins, and smart analytics.
+
+<hr>
+
+## Identify data types
+Azure Monitor collects data from each of the following tiers:
+- **Application monitoring data**: Data about the performance and functionality of the code you have written, regardless of its platform.
+- **Guest OS monitoring data**: Data about the operating system on which your application is running. The application could be running in Azure, another cloud, or on-premises.
+- **Azure resource monitoring data**: Data about the operation of an Azure resource.
+- **Azure subscription monitoring data**: Data about the operation and management of an Azure subscription, as well as data about the health and operation of Azure itself.
+- **Azure tenant monitoring data**: Data about the operation of tenant-level Azure services, such as Azure Active Directory.
+
+Azure Monitor starts collecting data as soon as you create an Azure subscription and add resources. Activity Logs record when resources are created or modified.
+
+Note: Azure Monitor can collect log data from any REST client using the Data Collector API. The Data Collector API lets you create custom monitoring scenarios and extend monitoring to resources that don't expose data through other resources.
+
+<hr>
+
+## Describe activity log events
+The Azure Activity Log is a subscription log that provides insight into subscription-level events that have occurred in Azure. This includes a range of data, from Azure Resource Manager operational data to updates on Service Health events.
+
+With the Activity Log, you determine the 'who, what, and when' for any write operations taken on the resources in your subscription.
+
+Note: Activity logs are kept for 90 days. You can query for any range of dates, as long as the starting date isn't more than 90 days in the past. You can retrieve events from your Activity Log using the Azure portal, CLI, PowerShell cmdlets, and Azure Monitor REST API.
+
+<hr>
+
+## Knowledge check
+1. Someone has deleted a network security group through Azure Resource Manager. What category would include this information? -> Administrative (create, update, delete, and action operations).
+2. What data does Azure Monitor collect? -> Data from many different sources, such as application event logs.
+3. How long are activity logs kept? -> 90 days.
+
+<hr>
+
+## Alert states
+You can set the state of an alert to specify where it is in the resolution process. When the criteria specified in the alert rule is met, an alert is created or fired, it has a status of **New**. You can change the status when you acknowledge an alert and when you choose it. All state changes are stored in the history of the alert. The following alert states are supported:
+
+- **New**: The issue has been detected and has not yet been reviewed.
+- **Acknowledged**: An administrator has reviewed the alert and stared working on it.
+- **Closed**: The issue has been resolved. After an alert has been closed you can reopen it by changing it to another state.
+
+Note: Alert state is different and independent of the monitor condition. Alert state is set by the user. Monitor condition is set by the system. When an alert fires, the alert's monitor condition is set to fired. When the underlying condition that caused the alert to fire clears, the monitor condition is set to resolved. The alert state isn't changed until the user changes it.
+
+<hr>
+
+## Create action groups
+An action group is a collection of notification preferences defined by the owner of an Azure subscription. Azure Monitor and Service Health alerts use action groups to notify users that an alert has been triggered. Various alerts may use the same action group or different action groups depending on the user's requirements.
+
+**Notifications** configure the method in which uses will be notified when the action group triggers.
+- **Email Azure Resource Manager role**: Send email to the members of the subscription's role. Email will only be sent to Azure AD user members of the role. Email will not be sent to Azure AD groups or service principals.
+- **Email/SMS message/Push/Voice**: Specify any email, SMS, push, or voice actions.
+
+**Actions** configure the method in which actions are performed when the action group triggers.
+- **Automation runbook**: The ability to define, build, orchestrate, manage, and report on workflows that support system and network operational processes. A runbook workflow can potentially interact with all types of infrastructure elements, such as applications, databases, and hardware.
+- **Azure Function**
+- **ITSM**: Connect Azure and a supported IT Service Management (ITSM) product/service. This requires an ITSM Connection.
+- **Webhook**: A webhook is a HTTPS or HTTP endpoint that allows external applications to communicate with your system.
+
+<hr>
+
+## Knowledge check
+1. The Alerts page has an alert marked as Acknowledged. What does this status indicate? -> An administrator has reviewed the alert and started working on it.
+2. A major retailer has an app that is used across the business. The performance of this app is critical to day-to-day operations. Because the app is so important, four infrastructure administrators have been identified to address any issues. What would ensure the administrators are notified if there is a problem? -> Configure an Action Group.
+3. An alert rule consists of which of the following? -> Resource, condition, actions, alert details.
+
+<hr>
+
+## Configure Log Analytics
+Access Log Analytics through Azure Monitor. To get started with Log Analytics you need to add a workspace.
+
+- Provide a name for the new Log Analytics workspace.
+- Select a Subscription form the drop-down list.
+- For Resource Group, select an existing resource group that contains one or more Azure virtual machines.
+- Select the Location your VMs are deployed to.
+- The workspace will automatically use the Per GB pricing plan.
+
+## Structure Log
+When you build a query, you start by determining which tables have the data that you're looking for. Each data source and solution stores its data in dedicated tables in the Log Analytics workspace. Documentation for each data source and solution includes the name of the data type that it creates and a description of each of its properties. Many queries will only require data from a single table, but others may use a variety of options to include data from multiple tables.
+
+Some common query tables are: Event, Syslog, Heartbeat, and Alert.
+
+The basic structure of a query is a source table followed by a series of operators separated by a pipe character. You can chain together multiple operators to refine the data and perform advanced functions.
+
+<hr>
+
+## Knowledge check
+1. Azure Monitor organizes log data into which of the following? -> Tables
+2. An online retailer has a very large web farm with more than 100 virtual machines. They would like to use Log Analytics to ensure these machines are responding to requests. To automate the process, the team will create a search query. Which source table should be used? -> Heartbeat
+3. Log analytics agents can run on which of the following? -> On many different platforms including other cloud providers.
+
+<hr>
+
+## Configure Network Watcher
+When you have to diagnose network problems in Azure, use Azure Network Watcher. Administrators use Network Watcher to monitor, diagnose, and gain insight into their network health and performance with metrics. The elements can be broken down into four areas: monitoring, network diagnostic tools, metrics, and logs. Additionally, Network Watcher provides tools for troubleshooting connection problems.
+
+<hr>
+
+## Describe Network Watcher features
+Network Watcher provides tools to monitor, diagnose, view metrics, and enable or disable logs for resources in an Azure virtual network. Network Watcher is a regional service that enables you to monitor and diagnose conditions at a network scenario level.
+
+- **Automate remote network monitoring with packet capture**: Monitor and diagnose networking issues without logging in to your VMs using Network Watcher. Trigger packet capture by setting alerts, and gain access to real-time performance information at the packet level. When you observe an issue, you can investigate in detail for better diagnostics.
+
+- **Gain insight into your network traffic using flow logs**: Build a deeper understanding of your network traffic pattern using Network Security Group flow logs. Information provided by flow logs helps you gather dtaa for compliance, auditing and monitoring your network security profile.
+
+- **Diagnose VPN connectivity issues**: Network Watcher provides you the ability to diagnose your most common VPN Gateway and Connections issues. Allowing you, not only, to identify the issue but also to use the detailed logs created to help further investigate.
+
+- **Verify IP Flow**: Quickly diagnose connectivity issues from or to the internet and from or to the on-premises environment.
+
+- **Next Hop**: To determine if traffic is being directed to the intended destination by showing the next hop. This will help determine if networking routing is correctly configured. Next hop also returns the route table associated with the next hop. If the route is defined as a user-defined route, that route is returned. Otherwise, next hop returns System Route. Depending on your situation the next hop could be internet, Virtual Appliance, Virtual Network Gateway, VNet Local, VNet Peering, or None. None lets you know that while there may be a valid system route to the destination, there is no next hop to route the traffic to the destination. When you create a virtual network, Azure creates several default outbound routes for network traffic. The outbound traffic from all resources, such as VMs, deployed in a virtual network, are routed based on Azure's default routes. You might override Azure's default routes or create additional routes.
+
+Note: To use Network Watcher, you must be an Owner, Contributor, or Network Contributor. If you create a custom role, the role must be able to read, write, and delete the Network Watcher.
+
+<hr>
+
+## Review flow verify diagnostics 
+**IP Flow Verify Purpose**: Checks if a packet is allowed or denied to or from a virtual machine. For example, confirming if a security rule is blocking ingress or egress traffic to or from a virtual machine.
+
+The IP Flow Verify capability enables you to specify a source and destination IPv4 address, port, protocol (TCP or UDP), and traffic direction (inbound and outbound). IP Flow Verify then tests the communication and informs you if the connection succeeds or fails. If the connection fails, IP Flow Verify identifies which security rule allowed or denied the communication.
+
+Can be found in 'Network Diagnostic Tools' in Azure Portal.
+
+<hr>
+
+## Review next hop diagnostics
+**Next Hop Purpose**: To determine if traffic is being directed to the intended destination. Next hop information will help determine if network routing is correctly configured.
+
+When you create a virtual network, Azure creates several default outbound routes for network traffic. The outbound traffic from all resources, such as VMs, deployed in a virtual network, are routed based on Azure's default routes. You might override Azure's default routes or create additional resources.
+
+<hr>
+
+## Visualize the network topology
+You can use the topology tool to visualize and understand the infrastructure you're dealing with before you start troubleshooting.
+
+Network Watcher's Topology capability enables you to generate a visual diagram of the resources in a virtual network, and the relationships between the resources. The topology tool generates a graphical display of your Azure virtual network, its resources, its interconnections, and their relationships with each other.
+
+Note: To generate the topology, you need a Network Watcher instance in the same region as the virtual network.
+
+<hr>
+
+## Knowledge check
+1. The infrastructure team thinks it would be helpful to get a visual representation of the company's networking elements. Which Network Watcher feature provides this capability? -> Network Watcher Topology.
+2. Users are reporting connectivity errors and timeouts. The help desk thinks a security rule may be blocking traffic to or from one of the virtual machines. To quicky troubleshoot the problem use which Network Watcher feature? -> IP Flow Verify
+3. Which of the following is a good use for Network Watcher? -> Diagnose network traffic filtering problems to or from a virtual machine.
+
+<hr>
+
+## Data types in Azure Monitor
+Azure Monitor receives data from target resources like applications, operating systems, Azure resources, Azure subscriptions, and Azure tenants. The nature of the resource defines which data types are available. A data type will be a *metric*, a *log*, or both a metric and a log:
+- The focus for *metric*-based data types is the numerical time-sensitive values that represent some aspect of the target resource.
+- The focuse for *log*-based data types is the querying of content data held in structured, record-based log files that are relevant to the target resource.
+
+- **Metric** alerts provide an alert trigger when a specified threshold is exceeded. For example, a metric alert can notify you when CPU usage is greater than 95 percent.
+- **Activity log** alerts notify you hwne Azure resources change state. For example, an activity log alert can notify you when a resource is deleted.
+- **Log** alerts are based on things written to log files. For example, a log alert can notify you when a web server has returned a number of 404 or 500 responses.
+
+## Composition of an alert rule
+Every alert or notification in Azure Monitor is the product of a rule. Some of these rules are built into the Azure platform. You use alert rules to create custom alerts and notifications. No matter which target resource or data source you use, the composition of an alert rule remains the same.
+
+- **Resource**: The target resource to be used for the alert rule. It's possible to assign multiple target resources to a single start rule. The type of resource will define the available signal types.
+- **Condition**: The signal type to be used to assess the rule. The signal type can be a metric, an activity log, or logs. The alert logic applied to the data that's supplied via the signal type. The structure of the alert logic will change depending on the signal type.
+- **Actions**: The action, like sending an email, sending an SMS message, or using a webhook. An action group, which typically contains a unique set of recipients for the action.
+- **Alert Details**: An alert name and an alert description that should specify the alert's purpose. The severity of an alert if the criteria or logic test evaluates `true`. The five severity levels are:
+0: Critical
+1. Error
+2. Warning
+3. Informational
+4. Verbose
+
+## Manage alert rules
+With Azure Monitor, you can specify one or more alert rules, and enable or disable them as needed.
+
+## Knowledge check
+1. What is the composition of an alert rule? -> Resource, condition, actions, alert details.
+2. Which of the following is an example of a log data type? -> HTTP response records.
+
+<hr>
+
+## Use dynamic threshold metric alerts
+Dynamic metric alerts use machine-learning tools that Azure provides to automatically improve the accuracy of the thresholds defined by the initial rule.
+
+There's no hard threshold in dynamic metrics. However, you'll need to define two more parameter:
+- The *look-back period* defines how many previous periods need to be evaluated. For example, if you set the look-back period to 3, then in the example used here, the assessed data range would be 30 minutes (three sets of 10 minutes).
+- The *number of violations* expresses how many times the logic condition has to deviate from the expected behavior before the alert rule fires a notification. In this example, if you set the number of violations to two, the alert would be triggered after two deviations from the calculated threshold.
+
+## Understand dimensions
+You can use dimensions to define one metric alert rule and have it applied to multiple related instances. For example, you can monitor CPU utilization across all the servers running your app. You can then receive an individual notification for each server instance when the rule conditions are triggered.
+
+## Scale metric alerts
+Scaling is currently limited to Azure virtual machines. However, a single metric alert can monitor resources in one Azure region.
+
+Like dimensions, a scaling metric alert is individual to the resource that triggered it.
+
+<hr>
+
+## Composition of log search rules
+Every log alert has an associated search rule. The composition of these rules is as follows:
+- **Log query**: Query that runs every time the alert rule fires.
+- **Time period**: Time range for the query.
+- **Frequency**: How often the query should run.
+- **Threshold**: Trigger point for an alert to be created.
+
+Log search results are one of two types: number of records or metric measurement.
+
+## Number of records
+Consider using the number-of-records type of log search when you're working with an event of event-driven data. Examples are syslog and web-app responses.
+
+This type of log search returns a single alert when the number of records in a search result reaches or exceeds the value for the number of records (threshold). For example, when the threshold for the search rule is greater or equal to five, the query results have to return five or more rows of data before the alert is triggered.
+
+## Metric measurement
+Metric measurement logs offer the basic functionality as metric alert logs.
+
+Unlike number-of-records search logs, metric measurement logs require additional criteria to be set:
+
+- **Aggregate function**: The calculation that will be made against the result data. An example is count or average. The result of the function is called **AggregatedValue**.
+- **Group field**: A field by which the result will be grouped. This criterion is used with the aggregated value. For example, you might specify that you want the average grouped by computer.
+- **Interval**: The time interval by which data is aggregated. For example, if you specify 10 minutes, an alert record is created by each aggregated block of 10 minutes.
+- **Threshold**: A point defined by an aggregated value and the total number of breaches.
+
+Consider using this type of alert when you need to add a level of tolerance to the results found. One use for this type of alert is to respond if a particular trend or pattern is found. For example, if the number of breaches is five, and any server in your group exceeds 85 percent CPU utilization more than five times within a given period, an alert is fired.
+
+## Stateless nature of log alerts
+One of the primary considerations when you're evaluating the use of log alerts is that they're stateless (stateful log alerts are currently in preview). A stateless log alert will generate new alerts every time the rule criteria are triggered, regardless of whether the alert was previously recorded.
+
+<hr>
+
+## Use activity log alerts to alert on events within your Azure infrastructure
+Activity log alerts allow you to be notified when a specific event happens on some Azure resource. For example, you can be notified when someone creates a new VM in a subscription.
+
+## When to use activity log alerts
+Metric alerts are ideally suited to monitoring for threshold breaches or spotting trends; log alerts allow for greater analytical monitoring of historical data.
+
+There are two types of activity log alerts:
+- **Specific operations**: Applies to resources within your Azure subscription, and often has a scope with specific resources or a resource group. You'll use this type when you need to receive an alert that reports a change to an aspect of your subscription. For example, you can receive an alert if a VM is deleted or new roles are assigned to a user.
+- **Service health events**: Include notice of incidents and maintenance of target resources.
+
+## Composition of an activity log alert
+Activity log alerts will monitor events only in the subscription where the log alert was created.
+
+To begin the creation process, you'll then select **Add activity log alert**. 
+
+Like the previous alerts, activity log alerts have their own attributes:
+- **Category**: Administrative, service health, autoscale, policy, or recommendation.
+- **Scope**: Resource level, resource group level, or subscription level.
+- **Resource group**: Where the alert rule is saved.
+- **Resource type**: Namespace for the target of the alert.
+- **Operation name**: Operation name.
+- **Level**: Verbose, informational, warning, error, or critical.
+- ***Status**: Started, failed, or succeeded.
+- **Event initiated by**: Email address or Azure Active Directory identifier (known as the "caller") for the user.
+
+## Create a resource-specific log alert
+When you create your activity log alert, you'll select **Activity Log** for the signal type. You'll then see all the available alerts for the resource you select. 
+
+## Create a service health alert
+To create a new alert, on the Azure portal, search for and select **Service Health**. Next, select **Health alerts**. After you select **Create service health alert**, the steps to create the alert are similar to the steps you've seen to create other alerts.
+
+The only difference is that you no longer need to select a resource, because the alert is for a whole region in Azure. What you can select is the kind of health event on which you want to be alerted. It's possible to select service issues, planned maintenance, or health advisories, or choose all of the events. The remaining steps of performing actions and naming the alerts are the same.
+
+## Perform actions when an alert happens
+When any event is triggered, you can create an associated action in an action group. **Action groups allow you to define actions that will be run.** You can run one or more actions for each triggered alert.
+
+The available actions are:
+- Send an email
+- Send an SMS message
+- Create an Azure app push notification
+- Make a voice call to a number
+- Call an Azure function
+- Trigger a logic app
+- Send a notification to a webhook
+- Create ITSM ticket
+- Use a runbook (to restart a VM, or scale a VM up or down)
+
+You can also reuse action groups on multiple alerts after you've created them. For example, after you've created an action to email your company's operations team, you can add that action group to all the service health events.
+
+You can add or create action groups at the same time that you create your alert. You can also edit an existing alert to add an action group after you've created it.
+
+<hr>
+
+## What are smart groups?
+Smart groups are an automatic feature of Azure Monitor. By using machine learning algorithms, Azure Monitor joins alerts based on repeat occurrence or similarity. Smart groups let you address a group of alerts instead of each alert individually.
+
+The name of the smart group (its taxonomy) is assigned automatically, and is the name of the first alert in the group. It's important to assign meaningful names to each alert that you create, because the name of the smart group can't be changed or amended.
+
+## When to use smart groups
+Think of smart groups as a dynamic filter applied to all the alerts in Azure Monitor. The machine-learning algorithm in Azure Monitor joins alerts based on information, such as historical patterns, similar properties, or structure. Using smart groups can reduce alert noise by more than 90 percent.
+
+The power of smart groups is that they show you all related alerts and give improved analytics. They can often identify a perviously unseen root cause.
+
+## Manage smart groups
+There are two ways to get to your smart groups: from the **Alert Summary** pane or from the **All Alerts** pane. Next, select **Alerts by Smart Group**.
+
+Either method results in a new page that shows all the smart groups. Selecting a smart group opens its details page, which splits into two sections:
+- **Summary**: Lists all the alerts included in the smart group.
+- **History**: Provides a history of all the changes made to the smart group.
+
+## Smart group states
+Smart groups, like regular alerts, have their own state. The state shows the progress of the smart group in the resolution process. Changing the state of a smart group doesn't alter the state of the individual alerts.
+
+To change the state, select **Change smart group state**.
+
+The states are:
+- **New**: The smart group has been created with a collection of alerts, but it hasn't yet been addressed.
+- **Acknowledged**: When an admin starts the resolution process, they change to this state.
+- **Closed**: When the source of the alert is fixed, the admin changes to this state.
+
+Changing the state of the smart group doesn't affect the underlying alert. Each alert member shown in the smart group can have a different state.
+
+## Knowledge check
+1. How are smart groups created? -> Automatically, using machine learning algorithms.
+2. Which of the following is NOT a state of a smart group alert? -> Failed.
+
+<hr>
+
+## Analyzing logs by using Kusto
+To retrieve, consolidate, and analyze data, you can specify a query to run in Azure Monitor logs. You can write a log query with the Kusto query language, which Azure Data Explorer also uses.
+
+<hr>
+
+## Create basic Azure Monitor log queries to extract information from log data
+You can use Azure Monitor log queries to extract information from log data. Querying is an important part of examining the log data that Azure Monitor captures.
+
+## Write Azure Monitor log queries by using Log Analytics
+You can find the Log Analytics tool in the Azure portal and use it to run sample queries or to create your own queries:
+
+1. In the Azure portal, in the left menu pane, select **Menu**.
+2. Select **Query & Analyze Logs*.
+
+## Write queries by using the Kusto language
+You use the Kusto Query Language to query log information for your services running in Azure. A Kusto query is a read-only request to process data and return results. You'll state the query in plain text by using a data-flow model that's designed to make the syntax easy to read, write, and automate. The query uses schema entities that are organized in a hierarchy similar to that of Azure SQL Database: databases, tables, and columns.
+
+A Kusto query consists of a sequence of query statements, delimited by a semicolon. At least one statement is a tabular expression statement. A tabular expression statement formats the data arranged as a table of columns and rows. 
+
+The syntax of a tabular expression statement has a tabular data flow from one tabular query operator to another, starting with a data source. A data source might be a table in a database, or an operator that produces data. The data then flows through a set of data-transformation operators that are bound together with the pipe delimiter.
+
+For example, the following Kusto query has a single tabular expression statement. The statement starts with a reference to a table called `Events`. The database that hosts this table is implicit here, and is part of the connection information. The data for that table, stored in rows, is filtered by the value of the `StartTime` column. The data is filtered further by the value of the `State` column. The query then returns the count of the resulting rows.
+
+        Events
+        | where StartTime >= datetime(2018-11-01) and StartTime < datetime(2018-12-01)
+        | where State == 'FLORIDA'
+        | count
+
+Note: The Kusto query language is case-sensitive. Language keywords are typically written in lowercase. When you're using names of tables or columns in a query, make sure to use the correct case.
+
+The following example retrieves the most recent heartbeat record for each computer. The computer is identified by its IP address. In this example, the `summarize` aggregation with the `arg_max` function returns the record with the most recent value for each IP address.
+
+        Heartbeat
+        | summarize arg_max(TimeGenerated, *) by ComputerIP
