@@ -6029,3 +6029,101 @@ The following example retrieves the most recent heartbeat record for each comput
 
         Heartbeat
         | summarize arg_max(TimeGenerated, *) by ComputerIP
+
+<hr>
+
+## Monitor performance of virtual machines by using Azure Monitor VM Insights
+Deploy monitoring for workloads on virtual machines. Set up a log analytics workspace, onboard virtual machines to Azure Monitor VM Insights, and build log queries by using Kusto Query Language.
+
+## What are Azure Monitor Logs and Azure Monitor VM Insights?
+Azure Monitor Logs collects and organizes log data generated from Azure resources. Log data is stored in a Log Analytics workspace. Data living in the workspace can be queried for trend analysis, reporting, and alerting.
+
+Azure Monitor VM Insights is a feature of Azure Monitor that relies on Azure Monitor Logs. Think of Azure Monitor VM Insights as a feature that provides a predefined, curated monitoring experience, with little configuration required. Azure Monitor VM Insights use a table named InsightsMetrics. Administrators can query performance and usage for virtual machines by using that table.
+
+<hr>
+
+## Configure file and folder backups
+All Azure Backup components (no matter whether you're protecting data on-premises or in the cloud) can be used to back up data to a Recovery Services vault in Azure.
+
+- **Offload on-premises backup**
+- **Back up Azure IaaS VMs**: Backups are stored in a Recovery Services valut.
+- **Get unlimited data transfer**: Azure doesn't limit or charge you for the amount of data going back and forth. If you perform an offline initial backup using the Azure Import/Export service to import large amounts of data, there is a cost associated with inbound data.
+- **Keep data secure**
+- **Get app-consistent backups**: An application-consistent backup means a recovery point has all required data to restore the backup copy. Restoring application-consistent data reduces the restoration time, allowing you to quicky return to a running state.
+- **Retain short and long-term data**: Azure doesn't limit the length of time data can remain in a Recovery Services vault. Azure Backup has a limit of 9999 recovery points per protected instance.
+- **Automatic storage management**
+- **Multiple storage options**: Azure Backup offers two types of replication to keep your storage/data highly available.
+        1. Locally redundant storage (LRS) replicates your data three times in a storage scale unit in a datacenter. All copies of the data exist within the same region. LRS is a low-cost option for protecting your data from local hardware failures.
+        2. Geo-redundant storage (GRS) is the default and recommended replication option. GRS replicates your data to secondary region. GRS costs more than LRS, but GRS provides a higher level of durability for your data, even if there is a regional outage.
+
+## Supported scenarios
+Backup Center is currently supported for Azure VM backup, SQL in Azure VM, SAP HANA in Azure VM, Azure Files, Azure Blobs, Azure-managed disks, and Azure Database for PostgreSQL Server backup.
+
+To get started with using Backup Center, search for Backup Center in the Azure portal and navigate to the Backup Center dashboard.
+
+<hr>
+
+## Setup recovery service vault backup options
+The **Recovery Services vault** is a storage entity in Azure that stores data.
+
+The Recovery Services vault can be used to back up Azure File Shares and on-premises files and folders.
+
+Note: Within an Azure subscription, you can create up to 25 Recovery Services vaults per region.
+
+## Configure on-premises file and folder backups
+There are several steps to configuring Azure backup of on-premises files and folders.
+
+Note: The Backup agent can be deployed on any Windows Server VM or physical machine.
+
+1. **Create the recovery services vault**: Within your Azure subscription, you will need to create a recovery services vault for backup.
+2. **Download the agent and credential file**: The recovery services vault provides a link to download the Azure Backup Agent. The Backup Agent will be installed on the local machine. There is also a credentials file that is required during the installation of the agent. You must have the latest version of the agent. Versions of the agent below 2.0.9083.0 must be upgraded by uninstalling and reinstalling the agent.
+3. **Install and register the agent**: The installer provides a wizard to configure the installation location, proxy server, and passphrase information. The downloaded credential file will be used to register the agent.
+4. **Configure the backup**: Use the agent to create a backup policy including when to backup, what to backup, how long to retain items, and settings like network throttling.
+
+<hr>
+
+## Manage the Azure recovery services agent
+Azure Backup for files and folders relies on the Microsoft Azure Recovery Services (MARS) agent to be installed on the Windows client or server.
+
+The MARS agent is a full featured agent that has many features.
+- Back up files and folders on physical or virtual Windows OS (VMs can be on-premises or in Azure).
+- No separate backup server required.
+- Not application aware; file, folder, and volume-level restore only.
+- Back up and restore content.
+
+<hr>
+
+## Knowledge check
+1. It's time to back up files and folders to Azure. Which of these steps should be completed first? -> Create the recovery services vault.
+2. Azure Backup requires which of the following? -> A recovery service vault.
+3. The infrastructure manager wants to know more about Azure Backup. What best describes Azure Backup? -> Azure Backup has unlimited data transfer.
+
+<hr>
+
+## Sample Question Notes
+
+**What specifies whether a storage account can be switched to geo-redundant storage?**
+- Storage account must not already be zone-redundant and not using premium storage.
+
+**DNS CNAME vs TXT Records**
+When you add a custom domain to an App Service, you need to validate the domain to verify the domain ownership. To verify domain ownership for contoso.com you will create a TXT record that contains the Custom Domain Verification ID. The CNAME record is used to map www.contoso.com to webapp.azurewebsites.com.
+
+**Configuring Azure Key Vault for Azure Disk Encryption**
+To enable support for Azure Disk Encryption, you need to modify the Access Policies for the keyvault. This provides an option to enable access to Azure Disk Encryption for volume encryption.
+
+**Recovery Services vault support vs Backup vault**
+- Recovery services: Azure VMs, Azure Files storage, SQL in Azure VM, SAP HANA in Azure VM, Azure Backup Server, Azure Backup Agent, and DM.
+
+- Backup vault: Azure Database for PostgreSQL servers, Azure Blobs, and Azure disks.
+
+**Role required to create bulk users in Azure AD**
+To bulk create users in Azure AD administration portal, you must be signed in as a Global administrator or User administrator.
+
+**Use Administrative units to logically group Azure AD resources**
+If you have multiple locations and want to assign admins to each location (with privileges to those locations only), you first create the Administrative units for each location. You can then assign User1 and User2 the User administrator role for each of their assocaited Administative units and then add the users and groups that should be managed members.
+
+**Moving a resource between resource groups**
+To move a resource between resource groups, you need to first remove any locks associated with the resource.
+
+**Storage lifecycle management policies**
+Lifecycle management policies apply rules to supported storage accounts to control the transition of data to cooler storage tiers. Lifecycle management polices are supported for block blobs and append blobs in general-purpose v2, premium block blob, and Blob Storage accounts. FileStorage and general purpose v1 storage accounts do not support lifecycle management.
